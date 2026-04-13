@@ -1,0 +1,84 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "card_ui.footer.version_label %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "card_ui.footer.version_label %1$@ %2$@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ - Version: %2$@"
+          }
+        }
+      }
+    },
+    "card_ui.output_box.clipboard_cleared" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard cleared for privacy!"
+          }
+        }
+      }
+    },
+    "card_ui.output_box.scan_code" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a code to begin…"
+          }
+        }
+      }
+    },
+    "card_ui.status_message.clearing_clipboard %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Clearing clipboard in… %lld second!"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Clearing clipboard in… %lld seconds!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "main.camera.not_supported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera not supported!"
+          }
+        }
+      }
+    },
+    "Thread 1: EXC_BAD_ACCESS (code=2, address=0x16d567fa0)" : {
+
+    }
+  },
+  "version" : "1.1"
+}
