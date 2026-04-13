@@ -10,17 +10,16 @@ import Combine
 
 @MainActor
 class LiveScannerViewModel: ObservableObject {
-    @Published var outputBoxMessage: String = String(localized: "card_ui.output_box.scan_code");
+    @Published var outputBoxMessage: String = NSLocalizedString( "card_ui.output_box.scan_code", comment: "");
     @Published var timeRemaining: Double = 0.0
     @Published var expirationDate: Date? = nil
     
     private let validator = ValidationService()
     private var cancellables = Set<AnyCancellable>()
-    private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    private var timerCancellable: AnyCancellable?
     
     init(){
-        setupTimer()
-        clearClipboard()
+        setupSceneObservers()
     }
 
     private func setupSceneObservers() {
@@ -30,15 +29,15 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     func processScan(scannedText: String) {
-        let result = validator.validateData(scannedText: scannedText)
+        
+        guard expirationDate == nil else { return }
+        
+        guard let result = validator.validateData(scannedText: scannedText) else { return }
         
         switch result {
-        case .validEAN(let code):
-            outputBoxMessage = "✅ Valid EAN: \(code)"
-            finishSuccessfulScan(code: code)
-            
-        case .validTPBN(let code):
-            outputBoxMessage = "📦 Valid TPBN: \(code)"
+        case .validEAN(let code), .validTPBN(let code):
+            let prefix = caseName(result) == "validEAN" ? "✅ Valid EAN" : "📦 Valid TPBN"
+            outputBoxMessage = "\(prefix): \(code)"
             finishSuccessfulScan(code: code)
             
         case .invalidEAN:
@@ -49,79 +48,56 @@ class LiveScannerViewModel: ObservableObject {
             outputBoxMessage = "❌ Invalid Data!"
             hapticFeedback(.error)
             
-        case .none: break
         }
-    }
-    
-    private func setupTimer() {
-        timer
-            .receive(on: RunLoop.main)
-            .sink { [weak self] now in
-                self?.updateTimer(at: now)
-            }
-            .store(in: &cancellables)
-    }
-    
-    func handleScanChange(newVal: String) {
-        
-        guard !newVal.contains(String(localized: "Thread 1: EXC_BAD_ACCESS (code=2, address=0x16d567fa0)")) else { return }
-        
-        if newVal.contains("Valid") && expirationDate == nil {
-            startTimer()
-        }
-    }
-    
-    private func startTimer() {
-        expirationDate = Date().addingTimeInterval(AppConfig.timerDurationInSeconds)
-        timeRemaining = AppConfig.timerDurationInSeconds
-    }
-    
-    private func updateTimer(at now: Date) {
-        guard let expiration = expirationDate else { return }
-        
-        if now >= expiration {
-            executeExpiration()
-        } else {
-            let remaining = expiration.timeIntervalSince(now)
-            if abs(self.timeRemaining - remaining) > 0.1 {
-                self.timeRemaining = remaining
-            }
-        }
-    }
-    
-    private func executeExpiration() {
-        expirationDate = nil
-        timeRemaining = 0
-        outputBoxMessage = String(localized: "card_ui.output_box.clipboard_cleared")
-        clearClipboard()
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-    }
-    
-    func clearClipboard() {
-        UIPasteboard.general.string = ""
-    }
-    
-    var statusMessage: LocalizedStringKey {
-        if timeRemaining > 0 {
-            return LocalizedStringKey("card_ui.status_message.clearing_clipboard \(Int(ceil(timeRemaining)))")
-        }
-        return ""
-    }
-    
-    private func hapticFeedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        UINotificationFeedbackGenerator().notificationOccurred(type)
-    }
-    
-    func forceExpiry() {
-        expirationDate = nil
-        timeRemaining = 0
-        outputBoxMessage = String(localized: "card_ui.output_box.clipboard_cleared")
-        clearClipboard()
     }
     
     private func finishSuccessfulScan(code: String) {
         UIPasteboard.general.string = code
         hapticFeedback(.success)
         startTimer()
+    }
+    
+    private func startTimer() {
+        let duration = AppConfig.timerDurationInSeconds
+        expirationDate = Date().addingTimeInterval(duration)
+        timeRemaining = duration
+        
+        timerCancellable = Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] now in
+                guard let self = self, let expiration = self.expirationDate else { return }
+                let remaining = expiration.timeIntervalSince(now)
+                if remaining <= 0 {
+                    self.executeExpiration()
+                } else {
+                    self.timeRemaining = timeRemaining
+                }
+            }
+    }
+    
+    private func executeExpiration() {
+        timerCancellable = nil
+        expirationDate = nil
+        timeRemaining = 0
+        outputBoxMessage = NSLocalizedString("card_ui.output_box.clipboard_cleared", comment: "")
+        UIPasteboard.general.string = ""
+        hapticFeedback(.warning)
+    }
+    
+    func forceExpiry() {
+        executeExpiration()
+    }
+    
+    var statusMessage: LocalizedStringKey {
+        guard timeRemaining > 0 else { return "" }
+        return LocalizedStringKey("card_ui.status_message.clearing_clipboard \(Int(ceil(timeRemaining)))")
+    }
+    
+    private func hapticFeedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        UINotificationFeedbackGenerator().notificationOccurred(type)
+    }
+    
+    private func caseName(_ result: ValidationService.ScanResult) -> String {
+        return Mirror(reflecting: result).children.first?.label ?? ""
     }
 }

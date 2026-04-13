@@ -10,12 +10,10 @@ import Foundation
 struct AppConfig {
     static let timerDurationInSeconds: Double = 6.0
     
-    static var appName: String {
+    static let appName: String =
         (Bundle.main.infoDictionary?["CFBundleName"] as? String) ?? "txeT2tcartxE"
-    }
     
-    static var appVersion: String {
+    static let appVersion: String =
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.0.0"
-    }
     
 }

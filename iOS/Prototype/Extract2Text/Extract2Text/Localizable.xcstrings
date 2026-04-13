@@ -75,9 +75,6 @@
           }
         }
       }
-    },
-    "Thread 1: EXC_BAD_ACCESS (code=2, address=0x16d567fa0)" : {
-
     }
   },
   "version" : "1.1"
