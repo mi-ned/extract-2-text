@@ -17,3 +17,4 @@ struct AppConfig {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.0.0"
     
 }
+

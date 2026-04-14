@@ -1,0 +1,31 @@
+//
+//  ScannerIntents.swift
+//  Extract2Text
+//
+//  Created by Miroslav Nedeljkovic on 14/04/2026.
+//
+
+import AppIntents
+import AVFoundation
+
+struct ToggleFlashlightIntent: AppIntent {
+    static var title: LocalizedStringResource = "..."
+    static var description = IntentDescription("...")
+    
+    static var isDiscoverable: Bool = true
+    
+    static var openAppWhenRun: Bool = false
+    
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
+            return .result()
+        }
+        
+        try? device.lockForConfiguration()
+        device.torchMode = (device.torchMode == .on) ? .off : .on
+        device.unlockForConfiguration()
+        
+        return .result()
+    }
+}

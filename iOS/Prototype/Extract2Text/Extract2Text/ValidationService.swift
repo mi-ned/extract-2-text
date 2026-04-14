@@ -14,6 +14,27 @@ struct ValidationService {
         case validTPBN(String)
         case invalidEAN
         case invalidData
+        
+        var displayMessage: String {
+            switch self {
+            case .validEAN(let code):
+                let format = NSLocalizedString("card_ui.output_box.valid_ean", comment: "")
+                return String.localizedStringWithFormat(format, code)
+            case .validTPBN(let code):
+                let format = NSLocalizedString("card_ui.output_box.valid_tpbn", comment: "")
+                return String.localizedStringWithFormat(format, code)
+            case .invalidEAN: 
+                return NSLocalizedString("card_ui.output_box.invalid_ean", comment: "")
+            case .invalidData:
+                return NSLocalizedString("card_ui.output_box.invalid_data", comment: "")
+            }
+        }
+        
+        var isSuccess: Bool {
+            if case .validEAN = self { return true }
+            if case .validTPBN = self { return true }
+            return false
+        }
     }
     
     func validateData(scannedText: String) -> ScanResult? {

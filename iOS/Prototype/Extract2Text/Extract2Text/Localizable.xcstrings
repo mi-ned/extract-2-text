@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "..." : {
+
+    },
     "card_ui.footer.version_label %@ %@" : {
       "localizations" : {
         "en" : {
@@ -31,6 +34,28 @@
         }
       }
     },
+    "card_ui.output_box.invalid_data" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Invalid data!"
+          }
+        }
+      }
+    },
+    "card_ui.output_box.invalid_ean" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ Invalid EAN code!"
+          }
+        }
+      }
+    },
     "card_ui.output_box.scan_code" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38,6 +63,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scan a code to begin…"
+          }
+        }
+      }
+    },
+    "card_ui.output_box.valid_ean" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Valid EAN code: %@"
+          }
+        }
+      }
+    },
+    "card_ui.output_box.valid_tpbn" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📦 Valid TPBN code: %@"
           }
         }
       }

@@ -18,8 +18,16 @@ struct LiveScannerView: View {
             
             cameraLayer
             
+            //flashlight
+            VStack {
+                flashLightButtonView
+                Spacer()
+            }
+            .ignoresSafeArea()
+            
             // Card UI
             VStack {
+                
                 Spacer()
                 
                 VStack(alignment: .leading, spacing: 16) {
@@ -42,7 +50,7 @@ struct LiveScannerView: View {
         @ViewBuilder
         private var cameraLayer: some View {
             if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
-                DataScannerView { scannedText in
+                DataScannerView(zoomFactor: $viewModel.zoomFactor) { scannedText in
                     viewModel.processScan(scannedText: scannedText)
                 }
                 .ignoresSafeArea()
@@ -52,9 +60,23 @@ struct LiveScannerView: View {
                     .foregroundColor(.red)
             }
         }
+    
+    private var flashLightButtonView: some View {
+        
+        Button(action: { viewModel.toggleFlashlight() }) {
+            Image(systemName: viewModel.isFlashlightOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(viewModel.isFlashlightOn ? .yellow : .white)
+                .frame(width: 50, height: 50)
+                .background(.ultraThinMaterial)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 0.5))
+        }
+        .padding(.top, 160)
+        
+    }
         
         private var timerBarView: some View {
-            //TimelineView(.animation) { timeline in
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     //Glass
@@ -63,10 +85,10 @@ struct LiveScannerView: View {
                     Capsule()
                         .fill(Color.foreground)
                         .frame(width: geo.size.width * CGFloat(viewModel.timeRemaining / AppConfig.timerDurationInSeconds), height: 8)
-                        .animation(.linear(duration: 0.1), value: viewModel.timeRemaining)
                 }
             }
             .frame(height: 8)
+            .animation(.interactiveSpring(), value: viewModel.timeRemaining)
         }
         
         private var outputBoxMessageBoxView: some View {

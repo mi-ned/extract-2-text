@@ -8,9 +8,10 @@
 import SwiftUI
 import VisionKit
 
+
 struct DataScannerView: UIViewControllerRepresentable {
-    //@Binding var recognizedText: String
     
+    @Binding var zoomFactor: CGFloat
     var onTextFound: (String) -> Void
     
     func makeUIViewController(context: Context) -> DataScannerViewController {
@@ -21,25 +22,65 @@ struct DataScannerView: UIViewControllerRepresentable {
             isHighFrameRateTrackingEnabled: true,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
-            isHighlightingEnabled: true
+            isHighlightingEnabled: true,
         )
         scanner.delegate = context.coordinator
+        //try? scanner.startScanning()
         return scanner
     }
     
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
-        try? uiViewController.startScanning()
+        
+        if uiViewController.zoomFactor != zoomFactor {
+            uiViewController.zoomFactor = zoomFactor
+        }
+        
+        
+        //if !uiViewController.isScanning {
+            try? uiViewController.startScanning()
+        //}
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(onTextFound: onTextFound)
+        Coordinator(parent: self)
     }
     
     class Coordinator: NSObject, DataScannerViewControllerDelegate {
-        var onTextFound: (String) -> Void
+        
+        var parent: DataScannerView
+        
+        init(parent: DataScannerView) {
+            self.parent = parent
+        }
+        
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            switch item {
+            case .text(let text):
+                parent.onTextFound(text.transcript)
+            default:
+                break
+            }
+        }
+        
+        func dataScanner(_ dataScanner: DataScannerViewController, didBecomActiveWithError error: (any Error)?) {
+            if error == nil {
+                parent.zoomFactor = dataScanner.zoomFactor
+            }
+            
+        }
+        
+        
+        /*var onTextFound: (String) -> Void
+        var hasStarted = false
         
         init(onTextFound: @escaping (String) -> Void) {
             self.onTextFound = onTextFound
+        }
+        
+        func dataScanner(_ dataScanner: DataScannerViewController, didBecomeActiveWithError error: (any Error)?) {
+            guard !hasStarted else { return }
+            try? dataScanner.startScanning()
+            hasStarted = true
         }
         
         func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
@@ -49,6 +90,6 @@ struct DataScannerView: UIViewControllerRepresentable {
             default:
                 break
             }
-        }
+        }*/
     }
 }
