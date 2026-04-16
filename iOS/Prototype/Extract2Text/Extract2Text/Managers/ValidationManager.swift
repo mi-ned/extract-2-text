@@ -56,15 +56,14 @@ struct ValidationService {
     }
     
     private func isValidEAN13(_ code: String) -> Bool {
-        
-        let digits = code.compactMap { Int(String($0)) }
+        let digits = code.compactMap { $0.wholeNumberValue }
         guard code.count == 13 else { return false }
         
-        let sum = digits.enumerated().prefix(12).reduce(0) { acc, next in
+        let sum = digits.dropLast().enumerated().reduce(0) { acc, next in
             acc + (next.offset % 2 == 0 ? next.element : next.element * 3)
          }
 
         let checkDigit = (10 - (sum % 10)) % 10
-        return checkDigit == digits[12]
+        return checkDigit == digits.last
     }
 }

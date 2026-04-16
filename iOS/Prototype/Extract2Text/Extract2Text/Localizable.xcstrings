@@ -8,6 +8,7 @@
 
     },
     "card_ui.footer.version_label %@ %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

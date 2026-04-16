@@ -23,6 +23,9 @@ class LiveScannerViewModel: ObservableObject {
     private var timerCancellable: AnyCancellable?
     
     init(){
+        if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
+            self.isFlashlightOn = (device.torchMode == .on)
+        }
         setupSceneObservers()
     }
     
@@ -71,6 +74,8 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     private func startTimer() {
+        timerCancellable?.cancel()
+        
         let duration = AppConfig.timerDurationInSeconds
         expirationDate = Date().addingTimeInterval(duration)
         
@@ -112,7 +117,7 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     private func hapticFeedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        UINotificationFeedbackGenerator().notificationOccurred(type)
+        HapticManager.shared.trigger(type)
     }
     
     func toggleFlashlight() {

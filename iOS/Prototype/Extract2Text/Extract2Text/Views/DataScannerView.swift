@@ -31,14 +31,17 @@ struct DataScannerView: UIViewControllerRepresentable {
     
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
         
-        if uiViewController.zoomFactor != zoomFactor {
+        if abs(uiViewController.zoomFactor - zoomFactor) > 0.01 {
             uiViewController.zoomFactor = zoomFactor
         }
         
+        /*if uiViewController.zoomFactor != zoomFactor {
+            uiViewController.zoomFactor = zoomFactor
+        }*/
         
-        //if !uiViewController.isScanning {
+        if !uiViewController.isScanning {
             try? uiViewController.startScanning()
-        //}
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -64,32 +67,10 @@ struct DataScannerView: UIViewControllerRepresentable {
         
         func dataScanner(_ dataScanner: DataScannerViewController, didBecomActiveWithError error: (any Error)?) {
             if error == nil {
-                parent.zoomFactor = dataScanner.zoomFactor
+                if abs(parent.zoomFactor - dataScanner.zoomFactor) > 0.01 {
+                    parent.zoomFactor = dataScanner.zoomFactor
+                }
             }
-            
         }
-        
-        
-        /*var onTextFound: (String) -> Void
-        var hasStarted = false
-        
-        init(onTextFound: @escaping (String) -> Void) {
-            self.onTextFound = onTextFound
-        }
-        
-        func dataScanner(_ dataScanner: DataScannerViewController, didBecomeActiveWithError error: (any Error)?) {
-            guard !hasStarted else { return }
-            try? dataScanner.startScanning()
-            hasStarted = true
-        }
-        
-        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
-            switch item {
-            case .text(let text):
-                onTextFound(text.transcript)
-            default:
-                break
-            }
-        }*/
     }
 }

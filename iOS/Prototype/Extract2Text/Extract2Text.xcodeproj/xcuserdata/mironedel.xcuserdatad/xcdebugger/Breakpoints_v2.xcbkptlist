@@ -46,8 +46,8 @@
             filePath = "Extract2Text/LiveScannerViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "92"
-            endingLineNumber = "92"
+            startingLineNumber = "97"
+            endingLineNumber = "97"
             landmarkName = "executeExpiration()"
             landmarkType = "7">
          </BreakpointContent>
