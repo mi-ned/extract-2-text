@@ -18,14 +18,7 @@ struct ToggleFlashlightIntent: AppIntent {
     
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
-            return .result()
-        }
-        
-        try? device.lockForConfiguration()
-        device.torchMode = (device.torchMode == .on) ? .off : .on
-        device.unlockForConfiguration()
-        
+        CameraManager.shared.toggleTorch()
         return .result()
     }
 }

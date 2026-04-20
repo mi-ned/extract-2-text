@@ -7,18 +7,30 @@
 
 import AVFoundation
 
-class CameraManager {
+final class CameraManager {
     static let shared = CameraManager()
+    private init() {}
     
-    var torchLevel: Float {
-        guard let device = AVCaptureDevice.default(for: .video) else { return 0 }
-        return device.torchMode == .on ? 1.0 : 0.0
+    var isTorchOn: Bool {
+        guard let device = AVCaptureDevice.default(for: .video) else { return false }
+        return device.torchMode == .on
     }
 
     func toggleTorch() {
         guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        do {
+            try device.lockForConfiguration()
+            device.torchMode = device.torchMode == .on ? .off : .on
+            device.unlockForConfiguration()
+        } catch {
+            print("Torch could not be used: \(error)")
+        }
+    }
+    
+    func setZoom(_ factor: CGFloat) {
+        guard let device = AVCaptureDevice.default(for: .video) else { return }
         try? device.lockForConfiguration()
-        device.torchMode = device.torchMode == .on ? .off : .on
+        device.videoZoomFactor = max(1.0, min(factor, device.activeFormat.videoMaxZoomFactor))
         device.unlockForConfiguration()
     }
 }

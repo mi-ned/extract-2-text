@@ -15,25 +15,24 @@ struct ValidationService {
         case invalidEAN
         case invalidData
         
-        var displayMessage: String {
+        var displayMessage: LocalizedStringResource {
             switch self {
-            case .validEAN(let code):
-                let format = NSLocalizedString("card_ui.output_box.valid_ean", comment: "")
-                return String.localizedStringWithFormat(format, code)
-            case .validTPBN(let code):
-                let format = NSLocalizedString("card_ui.output_box.valid_tpbn", comment: "")
-                return String.localizedStringWithFormat(format, code)
-            case .invalidEAN: 
-                return NSLocalizedString("card_ui.output_box.invalid_ean", comment: "")
-            case .invalidData:
-                return NSLocalizedString("card_ui.output_box.invalid_data", comment: "")
-            }
+                case .validEAN(let code):
+                    return LocalizedStringResource("card_ui.output_box.valid_ean \(code)")
+                case .validTPBN(let code):
+                    return LocalizedStringResource("card_ui.output_box.valid_tpbn \(code)")
+                case .invalidEAN:
+                    return LocalizedStringResource("card_ui.output_box.invalid_ean")
+                case .invalidData:
+                    return LocalizedStringResource("card_ui.output_box.invalid_data")
+                }
         }
         
         var isSuccess: Bool {
-            if case .validEAN = self { return true }
-            if case .validTPBN = self { return true }
-            return false
+            switch self {
+                case .validEAN, .validTPBN: return true
+                default: return false
+            }
         }
     }
     
@@ -56,14 +55,16 @@ struct ValidationService {
     }
     
     private func isValidEAN13(_ code: String) -> Bool {
-        let digits = code.compactMap { $0.wholeNumberValue }
-        guard code.count == 13 else { return false }
+        guard code.count == 13, code.allSatisfy(\.isNumber) else { return false }
         
-        let sum = digits.dropLast().enumerated().reduce(0) { acc, next in
-            acc + (next.offset % 2 == 0 ? next.element : next.element * 3)
+        let digits = code.compactMap { $0.wholeNumberValue }
+        let checkDigit = digits.last
+        
+        let sum = digits.dropLast().enumerated().reduce(0) { total, next in
+            total + (next.offset % 2 == 1 ? next.element * 3: next.element)
          }
 
-        let checkDigit = (10 - (sum % 10)) % 10
-        return checkDigit == digits.last
+        let calculatedCheck = (10 - (sum % 10)) % 10
+        return checkDigit == calculatedCheck
     }
 }

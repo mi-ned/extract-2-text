@@ -25,12 +25,18 @@ struct LiveScannerView: View {
                     //Flashlight button
                     FlashlightToggleButton(viewModel: viewModel)
                         .padding(.top, 128)
+                        .modifier(FlashlightButtonStyle(isOn: viewModel.isFlashlightOn, background: AnyShapeStyle(Color.black)))
                     Spacer()
                 }
                 Spacer()
                 
                 // Card UI
-                ScannerOverlayCard(message: viewModel.outputBoxMessage, timeRemaining: viewModel.timeRemaining, totalDuration: AppConfig.timerDurationInSeconds, statusMessage: viewModel.statusMessage, appInfo: "card_ui.footer.version_label\(AppConfig.appName) \(AppConfig.appVersion)"
+                ScannerOverlayCard(
+                    message: viewModel.outputBoxMessage,
+                    timeRemaining: viewModel.timeRemaining,
+                    totalDuration: AppConfig.timerDurationInSeconds,
+                    statusMessage: viewModel.statusMessage,
+                    appInfo: String(localized: "card_ui.footer.version_label\(AppConfig.appName) \(AppConfig.appVersion)")
                 )
             }
             .padding(.horizontal, 20)

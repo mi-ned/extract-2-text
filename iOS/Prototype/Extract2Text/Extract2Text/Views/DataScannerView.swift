@@ -35,12 +35,10 @@ struct DataScannerView: UIViewControllerRepresentable {
             uiViewController.zoomFactor = zoomFactor
         }
         
-        /*if uiViewController.zoomFactor != zoomFactor {
-            uiViewController.zoomFactor = zoomFactor
-        }*/
-        
         if !uiViewController.isScanning {
-            try? uiViewController.startScanning()
+            Task {
+                try? uiViewController.startScanning()
+            }
         }
     }
     

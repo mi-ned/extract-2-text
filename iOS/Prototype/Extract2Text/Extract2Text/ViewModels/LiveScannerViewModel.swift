@@ -22,19 +22,21 @@ class LiveScannerViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var timerCancellable: AnyCancellable?
     
+    private var resetTask: Task<Void, Never>? = nil
+    
     init(){
-        if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
+        /*if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
             self.isFlashlightOn = (device.torchMode == .on)
-        }
+        }*/
         setupSceneObservers()
     }
     
     deinit {
         timerCancellable?.cancel()
-        timerCancellable = nil
+        //timerCancellable = nil
         
         cancellables.forEach { $0.cancel() }
-        cancellables.removeAll()
+        //cancellables.removeAll()
     }
 
     private func setupSceneObservers() {
@@ -47,35 +49,49 @@ class LiveScannerViewModel: ObservableObject {
         
         guard expirationDate == nil else { return }
         
-        guard let result = validator.validateData(scannedText: scannedText) else {
-            //hapticFeedback(.error)
-            return
-        }
+        guard let result = validator.validateData(scannedText: scannedText) else { return }
         
-        outputBoxMessage = result.displayMessage
+        self.outputBoxMessage = String(localized: result.displayMessage)
         
         if result.isSuccess {
-            let code = scannedText.trimmingCharacters(in: .whitespacesAndNewlines)
-            finishSuccessfulScan(code: code)
+            finishSuccessfulScan(code: scannedText.trimmingCharacters(in: .whitespacesAndNewlines))
         } else {
-            hapticFeedback(.error)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                if self?.expirationDate == nil {
-                    self?.outputBoxMessage = NSLocalizedString("card_ui.output_box.scan_code", comment: "")
-                }
-            }
+            HapticManager.shared.trigger(.error)
+            triggerErrorReset()
         }
     }
     
     private func finishSuccessfulScan(code: String) {
         UIPasteboard.general.string = code
-        hapticFeedback(.success)
+        HapticManager.shared.trigger(.success)
         startTimer()
+    }
+    
+    private func triggerErrorReset() {
+        
+        resetTask?.cancel()
+        
+        resetTask = Task {
+            try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            
+            if self.expirationDate == nil {
+                self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
+            }
+        }
+        
+        /*DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            
+            guard let self = self else { return }
+            
+            if self.expirationDate == nil {
+                self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
+            }
+        }*/
     }
     
     private func startTimer() {
         timerCancellable?.cancel()
-        
         let duration = AppConfig.timerDurationInSeconds
         expirationDate = Date().addingTimeInterval(duration)
         
@@ -100,15 +116,9 @@ class LiveScannerViewModel: ObservableObject {
         
         outputBoxMessage = NSLocalizedString("card_ui.output_box.clipboard_cleared", comment: "")
         UIPasteboard.general.string = ""
-        hapticFeedback(.warning)
+        HapticManager.shared.trigger(.warning)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            guard let self = self else { return }
-            
-            if self.expirationDate == nil {
-                self.outputBoxMessage = NSLocalizedString("card_ui.output_box.scan_code", comment: "")
-            }
-        }
+        triggerErrorReset()
     }
     
     var statusMessage: LocalizedStringKey {
@@ -116,85 +126,15 @@ class LiveScannerViewModel: ObservableObject {
         return LocalizedStringKey("card_ui.status_message.clearing_clipboard \(Int(ceil(timeRemaining)))")
     }
     
-    private func hapticFeedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        HapticManager.shared.trigger(type)
-    }
-    
     func toggleFlashlight() {
-        
-        let shouldTurnOn = !isFlashlightOn
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            
-            //let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
-            
-            //guard let device = device, device.hasTorch else { return }
-            
-            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                          device.hasTorch else { return }
-            
-            do {
-                try device.lockForConfiguration()
-                
-                if shouldTurnOn {
-                    if device.isTorchModeSupported(.on) {
-                        try device.setTorchModeOn(level: 1.0)
-                    }
-                } else {
-                    device.torchMode = .off
-                }
-                 
-                device.unlockForConfiguration()
-                            
-                DispatchQueue.main.async {
-                    self.isFlashlightOn = shouldTurnOn
-                }
-            } catch {
-                print("Flashlight could not be used!")
-            }
-        }
+        CameraManager.shared.toggleTorch()
+        self.isFlashlightOn = CameraManager.shared.isTorchOn
     }
-    
-    func setZoom(_ factor: CGFloat) {
-        
-        let clamped = min(max(factor, 0.5), 40.0)
-        self.zoomFactor = clamped
-        
-        /*guard let device = AVCaptureDevice.default(for: .video) else { return }
-        
-        do {
-            try device.lockForConfiguration()
-        
-            let maxZoom = device.activeFormat.videoMaxZoomFactor
-            let minZoom = device.activeFormat.Min
-            
-            let supportedMin = device.activeFormat
-            
-            let clampedLevel = min(max(factor, 0.5), 40.0)
-            
-            device.videoZoomFactor = clampedLevel
-            self.zoomLevel = clampedLevel
-            
-            device.unlockForConfiguration()
-        } catch {
-            print("Camera zoom failed!")
-        }*/
-    }
-    
+
     func cycleZoom() {
         let steps: [CGFloat] = [0.5, 1.0, 4.0, 8.0]
         let next = steps.first(where: { $0 > zoomFactor + 0.1}) ?? steps[0]
-        setZoom(next)
-    }
-    
-    func setExposure(_ value: Float) {
-        guard let device = AVCaptureDevice.default(for: .video) else { return }
-        do {
-            try device.lockForConfiguration()
-            device.setExposureTargetBias(value)
-            device.unlockForConfiguration()
-        } catch {
-            print("Camera exposure failed!")
-        }
+        self.zoomFactor = next
+        CameraManager.shared.setZoom(next)
     }
 }
