@@ -12,6 +12,7 @@ import VisionKit
 struct DataScannerView: UIViewControllerRepresentable {
     
     @Binding var zoomFactor: CGFloat
+    let isFlashlightOn: Bool
     var onTextFound: (String) -> Void
     
     func makeUIViewController(context: Context) -> DataScannerViewController {
@@ -19,27 +20,47 @@ struct DataScannerView: UIViewControllerRepresentable {
             recognizedDataTypes: [.text()],
             qualityLevel: .accurate,
             recognizesMultipleItems: false,
-            isHighFrameRateTrackingEnabled: true,
+            isHighFrameRateTrackingEnabled: false,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
             isHighlightingEnabled: true,
         )
         scanner.delegate = context.coordinator
-        //try? scanner.startScanning()
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("StopScanner"), object: nil, queue: .main) { _ in
+                scanner.stopScanning()
+            }
+            
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("StartScanner"), object: nil, queue: .main) { _ in
+                try? scanner.startScanning()
+            }
         return scanner
     }
     
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
         
-        if abs(uiViewController.zoomFactor - zoomFactor) > 0.01 {
+        if uiViewController.zoomFactor != zoomFactor {
+            uiViewController.zoomFactor = zoomFactor
+        }
+        
+        if isFlashlightOn {
+            uiViewController.view.setNeedsLayout()
+            uiViewController.view.layoutIfNeeded()
+        }
+        
+        if !uiViewController.isScanning {
+            try? uiViewController.startScanning()
+        }
+        
+        /*if abs(uiViewController.zoomFactor - zoomFactor) > 0.01 {
             uiViewController.zoomFactor = zoomFactor
         }
         
         if !uiViewController.isScanning {
             Task {
+                try? await Task.sleep(nanoseconds: 100_000_000)
                 try? uiViewController.startScanning()
             }
-        }
+        }*/
     }
     
     func makeCoordinator() -> Coordinator {

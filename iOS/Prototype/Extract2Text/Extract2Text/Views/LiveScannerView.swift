@@ -15,19 +15,20 @@ struct LiveScannerView: View {
     
     var body: some View {
         
-        ZStack(alignment: .bottom) {
+        ZStack {
             
             //Camera layer
             ScannerCameraLayer(viewModel: viewModel)
-    
+            
+            //Flashlight
             VStack {
                 HStack {
-                    //Flashlight button
+                    Spacer()
                     FlashlightToggleButton(viewModel: viewModel)
-                        .padding(.top, 128)
-                        .modifier(FlashlightButtonStyle(isOn: viewModel.isFlashlightOn, background: AnyShapeStyle(Color.black)))
                     Spacer()
                 }
+                .padding(.top, 64)
+                
                 Spacer()
                 
                 // Card UI
@@ -36,11 +37,11 @@ struct LiveScannerView: View {
                     timeRemaining: viewModel.timeRemaining,
                     totalDuration: AppConfig.timerDurationInSeconds,
                     statusMessage: viewModel.statusMessage,
-                    appInfo: String(localized: "card_ui.footer.version_label\(AppConfig.appName) \(AppConfig.appVersion)")
+                    appInfo: String(localized: LocalizedStringResource("card_ui.footer.version_label \(AppConfig.appName) \(AppConfig.appVersion)"))
                 )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34) //34
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34)
         }
     }
 }

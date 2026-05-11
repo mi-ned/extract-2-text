@@ -1,25 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
+    "​" : {
 
     },
     "..." : {
 
     },
     "card_ui.footer.version_label %@ %@" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "card_ui.footer.version_label %1$@ %2$@"
-          }
-        },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ - Version: %2$@"
+            "value" : "%@ - Version %@"
           }
         }
       }
@@ -30,7 +24,7 @@
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clipboard cleared for privacy!"
+            "value" : "Clipboard purged!"
           }
         }
       }
@@ -63,13 +57,12 @@
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scan a code to begin…"
+            "value" : "Please scan a code…"
           }
         }
       }
     },
-    "card_ui.output_box.valid_ean" : {
-      "extractionState" : "manual",
+    "card_ui.output_box.valid_ean %@" : {
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -79,13 +72,12 @@
         }
       }
     },
-    "card_ui.output_box.valid_tpbn" : {
-      "extractionState" : "manual",
+    "card_ui.output_box.valid_tpbn %@" : {
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "📦 Valid TPBN code: %@"
+            "value" : "✅ Valid TPBN code: %@"
           }
         }
       }
@@ -99,13 +91,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Clearing clipboard in… %lld second!"
+                  "value" : "Clearing clipboard in %lld second!"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Clearing clipboard in… %lld seconds!"
+                  "value" : "Clearing clipboard in %lld seconds!"
                 }
               }
             }

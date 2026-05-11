@@ -15,9 +15,15 @@ struct ScannerCameraLayer: View {
     var body: some View {
         Group {
             if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
-                DataScannerView(zoomFactor: $viewModel.zoomFactor) { scannedText in
+                
+                DataScannerView(
+                    zoomFactor: $viewModel.zoomFactor,
+                    isFlashlightOn: viewModel.isFlashlightOn,
+                
+                ) { scannedText in
                     viewModel.processScan(scannedText: scannedText)
                 }
+                //.id(viewModel.isFlashlightOn)
             } else {
                 Color.black
                     .overlay(

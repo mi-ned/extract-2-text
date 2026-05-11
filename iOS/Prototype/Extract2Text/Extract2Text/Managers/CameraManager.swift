@@ -15,15 +15,33 @@ final class CameraManager {
         guard let device = AVCaptureDevice.default(for: .video) else { return false }
         return device.torchMode == .on
     }
-
+    
     func toggleTorch() {
         guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        
+        //if device.isTorchActive == (device.torchMode == .on) {
+        // DispatchQueue.global(qos: .userInteractive).async {
+        //if device.isTorchActive == (device.torchMode == .on) {
         do {
             try device.lockForConfiguration()
-            device.torchMode = device.torchMode == .on ? .off : .on
+            //let nextMode: AVCaptureDevice.TorchMode = device.torchMode == .on ? .off : .on
+            
+            //device.torchMode = (device.torchMode == .on) ? .off : .on
+            
+            if device.torchMode == .on {
+                device.torchMode = .off
+            } else {
+                try device.setTorchModeOn(level: 1.0)
+            }
+            
+            if device.isExposureModeSupported(.continuousAutoExposure){
+                device.exposureMode = .continuousAutoExposure
+            }
+            
             device.unlockForConfiguration()
+            
         } catch {
-            print("Torch could not be used: \(error)")
+            print(error)
         }
     }
     

@@ -13,12 +13,8 @@ struct ScannerOverlayCard: View {
     let message: String
     let timeRemaining: Double
     let totalDuration: Double
-    let statusMessage: LocalizedStringKey
+    let statusMessage: LocalizedStringResource
     let appInfo: String
-    
-    private var hasStatus: Bool {
-        timeRemaining > 0
-    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -27,10 +23,8 @@ struct ScannerOverlayCard: View {
             Text(message)
                 .modifier(OutputBoxStyle())
             
-            if hasStatus {
-                Text(statusMessage)
-                    .modifier(StatusMessageStyle())
-            }
+            Text(statusMessage)
+                .modifier(StatusMessageStyle())
             
             Text(appInfo)
                 .modifier(VersionFooterStyle())

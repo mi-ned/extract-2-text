@@ -12,7 +12,7 @@ import AVFoundation
 @MainActor
 class LiveScannerViewModel: ObservableObject {
     
-    @Published var outputBoxMessage: String = NSLocalizedString( "card_ui.output_box.scan_code", comment: "");
+    @Published var outputBoxMessage: String = String(localized:  "card_ui.output_box.scan_code");
     @Published var timeRemaining: Double = 0.0
     @Published var zoomFactor: CGFloat = 1.0
     @Published var isFlashlightOn: Bool = false
@@ -26,8 +26,8 @@ class LiveScannerViewModel: ObservableObject {
     
     init(){
         /*if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
-            self.isFlashlightOn = (device.torchMode == .on)
-        }*/
+         self.isFlashlightOn = (device.torchMode == .on)
+         }*/
         setupSceneObservers()
     }
     
@@ -38,7 +38,7 @@ class LiveScannerViewModel: ObservableObject {
         cancellables.forEach { $0.cancel() }
         //cancellables.removeAll()
     }
-
+    
     private func setupSceneObservers() {
         NotificationCenter.default.publisher(for: UIScene.didEnterBackgroundNotification)
             .sink { [weak self] _ in self?.executeExpiration() }
@@ -79,15 +79,6 @@ class LiveScannerViewModel: ObservableObject {
                 self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
             }
         }
-        
-        /*DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            
-            guard let self = self else { return }
-            
-            if self.expirationDate == nil {
-                self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
-            }
-        }*/
     }
     
     private func startTimer() {
@@ -114,23 +105,30 @@ class LiveScannerViewModel: ObservableObject {
         expirationDate = nil
         timeRemaining = 0
         
-        outputBoxMessage = NSLocalizedString("card_ui.output_box.clipboard_cleared", comment: "")
+        outputBoxMessage = String(localized: "card_ui.output_box.clipboard_cleared")
         UIPasteboard.general.string = ""
         HapticManager.shared.trigger(.warning)
         
         triggerErrorReset()
     }
     
-    var statusMessage: LocalizedStringKey {
-        guard timeRemaining > 0 else { return "" }
-        return LocalizedStringKey("card_ui.status_message.clearing_clipboard \(Int(ceil(timeRemaining)))")
+    var statusMessage: LocalizedStringResource {
+        guard timeRemaining > 0 else { return LocalizedStringResource("\u{200B}") }
+        return LocalizedStringResource("card_ui.status_message.clearing_clipboard \(Int(ceil(timeRemaining)))")
     }
     
     func toggleFlashlight() {
-        CameraManager.shared.toggleTorch()
-        self.isFlashlightOn = CameraManager.shared.isTorchOn
+        
+        NotificationCenter.default.post(name: NSNotification.Name("StopScanner"), object: nil)
+        
+        self.isFlashlightOn.toggle()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            CameraManager.shared.toggleTorch()
+            NotificationCenter.default.post(name: NSNotification.Name("StartScanner"), object: nil)
+        }
     }
-
+    
     func cycleZoom() {
         let steps: [CGFloat] = [0.5, 1.0, 4.0, 8.0]
         let next = steps.first(where: { $0 > zoomFactor + 0.1}) ?? steps[0]
