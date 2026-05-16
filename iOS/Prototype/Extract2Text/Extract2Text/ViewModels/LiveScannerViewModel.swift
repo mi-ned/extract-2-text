@@ -26,8 +26,8 @@ class LiveScannerViewModel: ObservableObject {
     
     init(){
         /*if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
-         self.isFlashlightOn = (device.torchMode == .on)
-         }*/
+            self.isFlashlightOn = (device.torchMode == .on)
+        }*/
         setupSceneObservers()
     }
     
@@ -38,7 +38,7 @@ class LiveScannerViewModel: ObservableObject {
         cancellables.forEach { $0.cancel() }
         //cancellables.removeAll()
     }
-    
+
     private func setupSceneObservers() {
         NotificationCenter.default.publisher(for: UIScene.didEnterBackgroundNotification)
             .sink { [weak self] _ in self?.executeExpiration() }
@@ -79,6 +79,8 @@ class LiveScannerViewModel: ObservableObject {
                 self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
             }
         }
+        
+
     }
     
     private func startTimer() {
@@ -125,10 +127,11 @@ class LiveScannerViewModel: ObservableObject {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             CameraManager.shared.toggleTorch()
+            //self.isFlashlightOn = CameraManager.shared.isTorchOn
             NotificationCenter.default.post(name: NSNotification.Name("StartScanner"), object: nil)
         }
     }
-    
+
     func cycleZoom() {
         let steps: [CGFloat] = [0.5, 1.0, 4.0, 8.0]
         let next = steps.first(where: { $0 > zoomFactor + 0.1}) ?? steps[0]

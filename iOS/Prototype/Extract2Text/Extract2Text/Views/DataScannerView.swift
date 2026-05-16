@@ -8,7 +8,6 @@
 import SwiftUI
 import VisionKit
 
-
 struct DataScannerView: UIViewControllerRepresentable {
     
     @Binding var zoomFactor: CGFloat
