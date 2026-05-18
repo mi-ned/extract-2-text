@@ -20,7 +20,7 @@ struct LiveScannerView: View {
             //Camera layer
             ScannerCameraLayer(viewModel: viewModel)
             
-            //Flashlight
+            //Flashlight button
             VStack {
                 HStack {
                     Spacer()

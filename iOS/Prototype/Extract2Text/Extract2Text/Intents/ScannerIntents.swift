@@ -18,7 +18,7 @@ struct ToggleFlashlightIntent: AppIntent {
     
     @MainActor
     func perform() async throws -> some IntentResult {
-        CameraManager.shared.toggleTorch()
+        FlashlightManager.toggleTorch()
         return .result()
     }
 }

@@ -25,10 +25,11 @@ class LiveScannerViewModel: ObservableObject {
     private var resetTask: Task<Void, Never>? = nil
     
     init(){
-        /*if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
+        if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
             self.isFlashlightOn = (device.torchMode == .on)
-        }*/
+        }
         setupSceneObservers()
+        setupTorchObserver()
     }
     
     deinit {
@@ -42,6 +43,17 @@ class LiveScannerViewModel: ObservableObject {
     private func setupSceneObservers() {
         NotificationCenter.default.publisher(for: UIScene.didEnterBackgroundNotification)
             .sink { [weak self] _ in self?.executeExpiration() }
+            .store(in: &cancellables)
+    }
+    
+    private func setupTorchObserver() {
+        NotificationCenter.default.publisher(for: .torchStateChanged)
+            
+            .receive(on: RunLoop.main)
+            .compactMap { $0.object as? Bool }
+            .sink { [weak self] isOn in
+                self?.isFlashlightOn = isOn
+            }
             .store(in: &cancellables)
     }
     
@@ -79,8 +91,6 @@ class LiveScannerViewModel: ObservableObject {
                 self.outputBoxMessage = String(localized: "card_ui.output_box.scan_code")
             }
         }
-        
-
     }
     
     private func startTimer() {
@@ -121,15 +131,11 @@ class LiveScannerViewModel: ObservableObject {
     
     func toggleFlashlight() {
         
-        NotificationCenter.default.post(name: NSNotification.Name("StopScanner"), object: nil)
+        //NotificationCenter.default.post(name: NSNotification.Name("StopScanner"), object: nil)
         
-        self.isFlashlightOn.toggle()
+        //self.isFlashlightOn.toggle()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            CameraManager.shared.toggleTorch()
-            //self.isFlashlightOn = CameraManager.shared.isTorchOn
-            NotificationCenter.default.post(name: NSNotification.Name("StartScanner"), object: nil)
-        }
+        FlashlightManager.toggleTorch()
     }
 
     func cycleZoom() {
