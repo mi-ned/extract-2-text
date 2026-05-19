@@ -6,36 +6,40 @@
 //
 
 import AVFoundation
+import SwiftUI
+import Combine
 
-extension Notification.Name {
-    static let torchStateChanged = Notification.Name("TorchStateChanged")
-}
-
-class FlashlightManager {
-    static func toggleTorch() {
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-        device.hasTorch else { return }
-        
+final class FlashlightManager: ObservableObject {
+    static let shared = FlashlightManager()
+    @Published var isOn: Bool = false
+    
+    private init() {}
+    
+    func toggleTorch() {
+        HardwareQueues.serialAccessQueue.async { [weak self] in
+            usleep(50000)
+            guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+            
             do {
-                    try device.lockForConfiguration()
-                    
-                    let targetState: AVCaptureDevice.TorchMode = (device.torchMode == .on) ? .off : .on
-                    
-                    if targetState == .on {
-                        try device.setTorchModeOn(level: AVCaptureDevice.maxAvailableTorchLevel)
-                    } else {
-                        device.torchMode = .off
-                    }
-                    
-                    device.unlockForConfiguration()
-                    
-                    // Post the actual status to anyone listening (like the ViewModel)
-                    let isOn = (targetState == .on)
-                    NotificationCenter.default.post(name: .torchStateChanged, object: isOn)
-                    
-                } catch {
-                    print("FlashlightManager: Error toggling torch: \(error.localizedDescription)")
+
+                try device.lockForConfiguration()
+                
+                defer { device.unlockForConfiguration() }
+                
+                let targetState: AVCaptureDevice.TorchMode = (device.torchMode == .on) ? .off : .on
+                
+                if targetState == .on {
+                    try device.setTorchModeOn(level: 0.5)
+                } else {
+                    device.torchMode = .off
                 }
+                                
+                DispatchQueue.main.async {
+                    self?.isOn = (targetState == .on)
+                }
+            } catch {
+                    print("Flashlight hardware busy: \(error)")
+                }
+            }
         }
     }
-

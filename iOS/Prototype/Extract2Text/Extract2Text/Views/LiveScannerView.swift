@@ -18,16 +18,19 @@ struct LiveScannerView: View {
         ZStack {
             
             //Camera layer
-            ScannerCameraLayer(viewModel: viewModel)
+            IsolatedCameraView(zoomFactor: $viewModel.zoomFactor, onScan: { text in viewModel.processScan(scannedText: text)})
             
             //Flashlight button
             VStack {
-                HStack {
+                /*HStack {
                     Spacer()
                     FlashlightToggleButton(viewModel: viewModel)
                     Spacer()
                 }
-                .padding(.top, 64)
+                .padding(.top, 64)*/
+                
+                FlashlightToggleButton(viewModel: viewModel)
+                    .padding(.top, 64)
                 
                 Spacer()
                 
@@ -40,7 +43,7 @@ struct LiveScannerView: View {
                     appInfo: String(localized: LocalizedStringResource("card_ui.footer.version_label \(AppConfig.appName) \(AppConfig.appVersion)"))
                 )
                 .padding(.horizontal, 20)
-                .padding(.bottom, 34) //34
+                .padding(.bottom, 34)
             }
         }
     }

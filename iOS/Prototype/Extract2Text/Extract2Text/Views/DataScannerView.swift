@@ -9,9 +9,7 @@ import SwiftUI
 import VisionKit
 
 struct DataScannerView: UIViewControllerRepresentable {
-    
     @Binding var zoomFactor: CGFloat
-    let isFlashlightOn: Bool
     var onTextFound: (String) -> Void
     
     func makeUIViewController(context: Context) -> DataScannerViewController {
@@ -19,19 +17,11 @@ struct DataScannerView: UIViewControllerRepresentable {
             recognizedDataTypes: [.text()],
             qualityLevel: .accurate,
             recognizesMultipleItems: false,
-            isHighFrameRateTrackingEnabled: false,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
-            isHighlightingEnabled: true,
+            isHighlightingEnabled: true
         )
         scanner.delegate = context.coordinator
-        NotificationCenter.default.addObserver(forName: NSNotification.Name("StopScanner"), object: nil, queue: .main) { _ in
-                scanner.stopScanning()
-            }
-            
-            NotificationCenter.default.addObserver(forName: NSNotification.Name("StartScanner"), object: nil, queue: .main) { _ in
-                try? scanner.startScanning()
-            }
         return scanner
     }
     
@@ -41,53 +31,26 @@ struct DataScannerView: UIViewControllerRepresentable {
             uiViewController.zoomFactor = zoomFactor
         }
         
-        if isFlashlightOn {
-            uiViewController.view.setNeedsLayout()
-            uiViewController.view.layoutIfNeeded()
-        }
-        
-        if !uiViewController.isScanning {
+        if !uiViewController.isScanning && !context.coordinator.isStarting {
+            context.coordinator.isStarting = true
+            
             try? uiViewController.startScanning()
         }
-        
-        /*if abs(uiViewController.zoomFactor - zoomFactor) > 0.01 {
-            uiViewController.zoomFactor = zoomFactor
-        }
-        
-        if !uiViewController.isScanning {
-            Task {
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                try? uiViewController.startScanning()
-            }
-        }*/
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+        Coordinator(self)
     }
     
     class Coordinator: NSObject, DataScannerViewControllerDelegate {
-        
         var parent: DataScannerView
+        var isStarting = false
         
-        init(parent: DataScannerView) {
-            self.parent = parent
-        }
+        init(_ parent: DataScannerView) { self.parent = parent }
         
         func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
-            switch item {
-            case .text(let text):
+            if case .text(let text) = item {
                 parent.onTextFound(text.transcript)
-            default:
-                break
-            }
-        }
-        
-        func dataScanner(_ dataScanner: DataScannerViewController, didBecomActiveWithError error: (any Error)?) {
-            if error == nil {
-                if abs(parent.zoomFactor - dataScanner.zoomFactor) > 0.01 {
-                    parent.zoomFactor = dataScanner.zoomFactor
-                }
             }
         }
     }

@@ -9,16 +9,11 @@ import AppIntents
 import AVFoundation
 
 struct ToggleFlashlightIntent: AppIntent {
-    static var title: LocalizedStringResource = "..."
-    static var description = IntentDescription("...")
-    
-    static var isDiscoverable: Bool = true
-    
-    static var openAppWhenRun: Bool = false
+    static var title: LocalizedStringResource = "Toggle Flashlight"
     
     @MainActor
     func perform() async throws -> some IntentResult {
-        FlashlightManager.toggleTorch()
+        FlashlightManager.shared.toggleTorch()
         return .result()
     }
 }

@@ -4,9 +4,6 @@
     "​" : {
 
     },
-    "..." : {
-
-    },
     "card_ui.footer.version_label %@ %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -115,6 +112,9 @@
           }
         }
       }
+    },
+    "Toggle Flashlight" : {
+
     }
   },
   "version" : "1.1"

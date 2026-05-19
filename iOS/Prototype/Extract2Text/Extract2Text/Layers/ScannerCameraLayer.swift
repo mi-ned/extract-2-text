@@ -13,27 +13,11 @@ struct ScannerCameraLayer: View {
     @ObservedObject var viewModel: LiveScannerViewModel
     
     var body: some View {
-        Group {
-            if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
-                
-                DataScannerView(
-                    zoomFactor: $viewModel.zoomFactor,
-                    isFlashlightOn: viewModel.isFlashlightOn,
-                
-                ) { scannedText in
-                    viewModel.processScan(scannedText: scannedText)
-                }
-                //.id(viewModel.isFlashlightOn)
-            } else {
-                Color.black
-                    .overlay(
-                        Text(String(localized: "main.camera.not_supported"))
-                            .foregroundColor(.red)
-                            .multilineTextAlignment(.center)
-                            .padding()
-                        )
-                    }
-                }
+
+        DataScannerView(
+            zoomFactor: $viewModel.zoomFactor,
+            onTextFound: { text in viewModel.processScan(scannedText: text) }
+        )
         .ignoresSafeArea()
+        }
     }
-}

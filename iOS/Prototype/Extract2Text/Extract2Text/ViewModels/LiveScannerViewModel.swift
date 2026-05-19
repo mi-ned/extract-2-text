@@ -12,24 +12,39 @@ import AVFoundation
 @MainActor
 class LiveScannerViewModel: ObservableObject {
     
-    @Published var outputBoxMessage: String = String(localized:  "card_ui.output_box.scan_code");
+    @Published var outputBoxMessage: String = String(localized:  "card_ui.output_box.scan_code")
+    @Published var zoomFactor: CGFloat = 1.0 {
+        didSet {
+            if abs(oldValue - zoomFactor) > 0.05 {
+                CameraManager.shared.setZoom(zoomFactor)
+            }
+        }
+    }
     @Published var timeRemaining: Double = 0.0
-    @Published var zoomFactor: CGFloat = 1.0
-    @Published var isFlashlightOn: Bool = false
     
     private var expirationDate: Date? = nil
-    private let validator = ValidationService()
-    private var cancellables = Set<AnyCancellable>()
+    
     private var timerCancellable: AnyCancellable?
     
     private var resetTask: Task<Void, Never>? = nil
     
-    init(){
-        if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back){
-            self.isFlashlightOn = (device.torchMode == .on)
-        }
+    @Published var isFlashlightOn: Bool = false
+    
+    private let validator = ValidationService()
+    private var flashlightCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        FlashlightManager.shared.$isOn
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newValue in
+                if self?.isFlashlightOn != newValue {
+                    self?.isFlashlightOn = newValue
+                }
+            }
+            .store(in: &cancellables)
+        
         setupSceneObservers()
-        setupTorchObserver()
     }
     
     deinit {
@@ -46,39 +61,6 @@ class LiveScannerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    private func setupTorchObserver() {
-        NotificationCenter.default.publisher(for: .torchStateChanged)
-            
-            .receive(on: RunLoop.main)
-            .compactMap { $0.object as? Bool }
-            .sink { [weak self] isOn in
-                self?.isFlashlightOn = isOn
-            }
-            .store(in: &cancellables)
-    }
-    
-    func processScan(scannedText: String) {
-        
-        guard expirationDate == nil else { return }
-        
-        guard let result = validator.validateData(scannedText: scannedText) else { return }
-        
-        self.outputBoxMessage = String(localized: result.displayMessage)
-        
-        if result.isSuccess {
-            finishSuccessfulScan(code: scannedText.trimmingCharacters(in: .whitespacesAndNewlines))
-        } else {
-            HapticManager.shared.trigger(.error)
-            triggerErrorReset()
-        }
-    }
-    
-    private func finishSuccessfulScan(code: String) {
-        UIPasteboard.general.string = code
-        HapticManager.shared.trigger(.success)
-        startTimer()
-    }
-    
     private func triggerErrorReset() {
         
         resetTask?.cancel()
@@ -93,7 +75,7 @@ class LiveScannerViewModel: ObservableObject {
         }
     }
     
-    private func startTimer() {
+    private func startClipboardTimer() {
         timerCancellable?.cancel()
         let duration = AppConfig.timerDurationInSeconds
         expirationDate = Date().addingTimeInterval(duration)
@@ -130,18 +112,24 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     func toggleFlashlight() {
+        FlashlightManager.shared.toggleTorch()
+    }
         
-        //NotificationCenter.default.post(name: NSNotification.Name("StopScanner"), object: nil)
-        
-        //self.isFlashlightOn.toggle()
-        
-        FlashlightManager.toggleTorch()
+    func processScan(scannedText: String) {
+        guard let result = validator.validateData(scannedText: scannedText) else { return }
+                
+        if result.isSuccess {
+            UIPasteboard.general.string = scannedText
+            startClipboardTimer()
+            HapticManager.shared.trigger(.success)
+        }
+        outputBoxMessage = String(localized: result.displayMessage)
     }
 
     func cycleZoom() {
         let steps: [CGFloat] = [0.5, 1.0, 4.0, 8.0]
         let next = steps.first(where: { $0 > zoomFactor + 0.1}) ?? steps[0]
         self.zoomFactor = next
-        CameraManager.shared.setZoom(next)
+        //CameraManager.shared.setZoom(next)
     }
 }
