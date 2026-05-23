@@ -14,8 +14,10 @@ struct FlashlightToggleButton: View {
     
     var body: some View {
         Button(action: { viewModel.toggleFlashlight() }) {
-            Image(systemName: viewModel.isFlashlightOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                .modifier(FlashlightButtonStyle(isOn: viewModel.isFlashlightOn))
+            Image(systemName: viewModel.isFlashlightBusying ? "flashlight.on.fill" : "flashlight.off.fill")
+                .modifier(FlashlightButtonStyle(isOn: viewModel.isFlashlightBusying))
             }
+        .disabled(viewModel.isFlashlightBusying)
+        .opacity(viewModel.isFlashlightBusying ? 0.5: 1.0)
     }
 }

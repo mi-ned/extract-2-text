@@ -10,7 +10,12 @@ import VisionKit
 
 struct DataScannerView: UIViewControllerRepresentable {
     @Binding var zoomFactor: CGFloat
+    @Binding var isScanning: Bool
     var onTextFound: (String) -> Void
+    
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(parent: self)
+    }
     
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let scanner = DataScannerViewController(
@@ -21,37 +26,49 @@ struct DataScannerView: UIViewControllerRepresentable {
             isGuidanceEnabled: true,
             isHighlightingEnabled: true
         )
+        
         scanner.delegate = context.coordinator
         return scanner
     }
     
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
+        uiViewController.zoomFactor = Double(zoomFactor)
         
-        if uiViewController.zoomFactor != zoomFactor {
-            uiViewController.zoomFactor = zoomFactor
+        if isScanning {
+            if !uiViewController.isScanning {
+                try? uiViewController.startScanning()
+            }
+        } else {
+            if uiViewController.isScanning {
+                uiViewController.stopScanning()
+            }
         }
-        
-        if !uiViewController.isScanning && !context.coordinator.isStarting {
-            context.coordinator.isStarting = true
-            
-            try? uiViewController.startScanning()
-        }
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
     }
     
     class Coordinator: NSObject, DataScannerViewControllerDelegate {
         var parent: DataScannerView
-        var isStarting = false
         
-        init(_ parent: DataScannerView) { self.parent = parent }
+        init(parent: DataScannerView) {
+            self.parent = parent
+            super.init()
+        }
         
         func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
-            if case .text(let text) = item {
+            switch item {
+            case .text(let text):
                 parent.onTextFound(text.transcript)
+            default:
+                break
             }
         }
+        
+        // Optional but recommended for auto-scanning without tapping
+        /*func dataScanner(_ dataScanner: DataScannerViewController, didAdd items: [RecognizedItem], allItems: [RecognizedItem]) {
+            for item in items {
+                if case .text(let text) = item {
+                    parent.onTextFound(text.transcript)
+                }
+            }
+        }*/
     }
 }

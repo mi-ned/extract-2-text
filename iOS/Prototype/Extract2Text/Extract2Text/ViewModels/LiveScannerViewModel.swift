@@ -13,13 +13,7 @@ import AVFoundation
 class LiveScannerViewModel: ObservableObject {
     
     @Published var outputBoxMessage: String = String(localized:  "card_ui.output_box.scan_code")
-    @Published var zoomFactor: CGFloat = 1.0 {
-        didSet {
-            if abs(oldValue - zoomFactor) > 0.05 {
-                CameraManager.shared.setZoom(zoomFactor)
-            }
-        }
-    }
+    @Published var zoomFactor: CGFloat = 1.0
     @Published var timeRemaining: Double = 0.0
     
     private var expirationDate: Date? = nil
@@ -28,7 +22,9 @@ class LiveScannerViewModel: ObservableObject {
     
     private var resetTask: Task<Void, Never>? = nil
     
+    @Published var isFlashlightBusying: Bool = false
     @Published var isFlashlightOn: Bool = false
+    @Published var isScanning: Bool = true
     
     private let validator = ValidationService()
     private var flashlightCancellable: AnyCancellable?
@@ -37,12 +33,7 @@ class LiveScannerViewModel: ObservableObject {
     init() {
         FlashlightManager.shared.$isOn
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newValue in
-                if self?.isFlashlightOn != newValue {
-                    self?.isFlashlightOn = newValue
-                }
-            }
-            .store(in: &cancellables)
+            .assign(to: &$isFlashlightOn)
         
         setupSceneObservers()
     }
@@ -112,7 +103,21 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     func toggleFlashlight() {
-        FlashlightManager.shared.toggleTorch()
+        
+        guard !isFlashlightBusying else { return }
+        isFlashlightBusying = true
+        
+        self.isScanning = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
+            
+            FlashlightManager.shared.toggleTorch()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25){
+                self.isScanning = true
+                self.isFlashlightBusying = false
+            }
+        }
     }
         
     func processScan(scannedText: String) {

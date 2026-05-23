@@ -18,16 +18,10 @@ struct LiveScannerView: View {
         ZStack {
             
             //Camera layer
-            IsolatedCameraView(zoomFactor: $viewModel.zoomFactor, onScan: { text in viewModel.processScan(scannedText: text)})
+            IsolatedCameraView(zoomFactor: $viewModel.zoomFactor, isScanning: $viewModel.isScanning, onScan: { text in viewModel.processScan(scannedText: text)})
             
             //Flashlight button
             VStack {
-                /*HStack {
-                    Spacer()
-                    FlashlightToggleButton(viewModel: viewModel)
-                    Spacer()
-                }
-                .padding(.top, 64)*/
                 
                 FlashlightToggleButton(viewModel: viewModel)
                     .padding(.top, 64)
