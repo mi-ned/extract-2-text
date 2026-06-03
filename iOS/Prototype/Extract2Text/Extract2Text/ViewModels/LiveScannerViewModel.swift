@@ -21,6 +21,7 @@ class LiveScannerViewModel: ObservableObject {
     private var timerCancellable: AnyCancellable?
     
     private var resetTask: Task<Void, Never>? = nil
+    private var resumeScanningTask: Task<Void, Never>? = nil
     
     @Published var isFlashlightBusying: Bool = false
     @Published var isFlashlightOn: Bool = false
@@ -42,6 +43,7 @@ class LiveScannerViewModel: ObservableObject {
         timerCancellable?.cancel()
         //timerCancellable = nil
         
+        resumeScanningTask?.cancel()
         cancellables.forEach { $0.cancel() }
         //cancellables.removeAll()
     }
@@ -103,20 +105,17 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     func toggleFlashlight() {
-        
         guard !isFlashlightBusying else { return }
+
         isFlashlightBusying = true
-        
-        self.isScanning = false
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
-            
-            FlashlightManager.shared.toggleTorch()
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25){
-                self.isScanning = true
-                self.isFlashlightBusying = false
-            }
+        FlashlightManager.shared.toggleTorch()
+
+        resumeScanningTask?.cancel()
+        resumeScanningTask = Task {
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+
+            isFlashlightBusying = false
         }
     }
         

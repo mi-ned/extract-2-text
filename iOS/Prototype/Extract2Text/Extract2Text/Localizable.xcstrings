@@ -115,6 +115,9 @@
     },
     "Toggle Flashlight" : {
 
+    },
+    "Turns the flashlight on or off." : {
+
     }
   },
   "version" : "1.1"

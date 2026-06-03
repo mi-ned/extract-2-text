@@ -40,5 +40,8 @@ struct LiveScannerView: View {
                 .padding(.bottom, 34)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .toggleFlashlightRequested)) { _ in
+            viewModel.toggleFlashlight()
+        }
     }
 }

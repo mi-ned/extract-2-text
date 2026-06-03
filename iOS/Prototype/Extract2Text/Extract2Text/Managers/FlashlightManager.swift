@@ -15,14 +15,21 @@ final class FlashlightManager: ObservableObject {
     private init() {}
     
     func toggleTorch() {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              device.hasTorch,
+              device.isTorchAvailable else { return }
                 
         do {
             try device.lockForConfiguration()
-            let targetState: AVCaptureDevice.TorchMode = (device.torchMode == .on) ? .off : .on
-            device.torchMode = targetState
-            device.unlockForConfiguration()
-            self.isOn = (targetState == .on)
+            defer { device.unlockForConfiguration() }
+
+            if device.torchMode == .on {
+                device.torchMode = .off
+                isOn = false
+            } else if device.isTorchModeSupported(.on) {
+                try device.setTorchModeOn(level: AVCaptureDevice.maxAvailableTorchLevel)
+                isOn = true
+            }
         } catch {
             print("Could not lock hardware: \(error)")
         }
