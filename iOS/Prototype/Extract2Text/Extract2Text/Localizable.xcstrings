@@ -1,8 +1,27 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "​" : {
-
+    "alert.button.ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "alert.button.settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
     },
     "card_ui.footer.version_label %@ %@" : {
       "extractionState" : "manual",
@@ -60,6 +79,7 @@
       }
     },
     "card_ui.output_box.valid_ean %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -70,6 +90,7 @@
       }
     },
     "card_ui.output_box.valid_tpbn %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -108,13 +129,21 @@
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Camera not supported!"
+            "value" : "Camera Unavailable"
           }
         }
       }
     },
-    "Toggle Flashlight" : {
-
+    "main.camera.not_supported_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera does not work. Please do something about it!"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

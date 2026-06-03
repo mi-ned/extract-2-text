@@ -2,35 +2,87 @@
 //  CameraManager.swift
 //  Extract2Text
 //
-//  Created by Miroslav Nedeljkovic on 15/04/2026.
+//  Created by Miroslav Nedeljkovic on 03/06/2026.
 //
 
 import AVFoundation
+import SwiftUI
 
-final class CameraManager {
-    static let shared = CameraManager()
-    private init() {}
+enum CameraStatus {
+    case idle, running, unauthorized, error, userDismissedError
+}
+
+@Observable
+class CameraManager {
     
-    func setZoom(_ factor: CGFloat) {
-        HardwareQueues.serialAccessQueue.async {
-            guard let device = AVCaptureDevice.default(for: .video) else { return }
+    private let simulateError = false
+    
+    var status: CameraStatus = .idle
+    let session = AVCaptureSession()
+    private let sessionQueue = DispatchQueue(label: "camera.session.queue")
+    
+    init() {
+        print("CameraManager Initialized!")
+        setupSession()
+        setupObservers()
+    }
+    
+    private func setupSession() {
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
             
-            var lockAquired = false
-            var attempts = 0
-            while !lockAquired && attempts < 3 {
-                if (try? device.lockForConfiguration()) != nil {
-                    lockAquired = true
-                } else {
-                    attempts += 1
-                    usleep(50000)
-                }
+            if self.simulateError {
+                self.status = .error
+                print("Manual test trigger: Status set to .error")
+                return
             }
             
-            guard lockAquired else { return }
-                    
-            let zoom = max(1.0, min(factor, device.activeFormat.videoMaxZoomFactor))
-            device.videoZoomFactor = zoom
-            device.unlockForConfiguration()
+            guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+            
+            self.configureCaptureInput(for: camera)
         }
+    }
+    
+    private func configureCaptureInput(for camera: AVCaptureDevice) {
+        do {
+            self.session.beginConfiguration()
+            self.session.sessionPreset = .high
+            let input = try AVCaptureDeviceInput(device: camera)
+            if self.session.canAddInput(input) {
+                self.session.addInput(input)
+            }
+            self.session.commitConfiguration()
+            self.status = .running
+        } catch {
+            self.status = .error
+            print("Camera Setup Error: \(error)")
+        }
+    }
+    
+    private func setupObservers() {
+        NotificationCenter.default.addObserver(forName: .AVCaptureSessionWasInterrupted, object: session, queue: .main) { _ in
+                print("Camera was interrupted by the system.")
+        }
+    }
+    
+    func start() {
+        sessionQueue.async { [weak self] in
+            if let session = self?.session, !session.isRunning {
+                session.startRunning()
+            }
+        }
+    }
+    
+    func stop() {
+        sessionQueue.async { [weak self] in
+            if let session = self?.session, session.isRunning {
+                session.stopRunning()
+            }
+        }
+    }
+    
+    func triggerTestError() {
+        self.status = .error
+        print("Test: Status set to .error")
     }
 }
