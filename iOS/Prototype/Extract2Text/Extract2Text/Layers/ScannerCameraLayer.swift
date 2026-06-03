@@ -16,7 +16,6 @@ struct ScannerCameraLayer: View {
 
         DataScannerView(
             zoomFactor: $viewModel.zoomFactor,
-            isScanning: $viewModel.isFlashlightBusying,
             onTextFound: { text in viewModel.processScan(scannedText: text) }
         )
         .ignoresSafeArea()

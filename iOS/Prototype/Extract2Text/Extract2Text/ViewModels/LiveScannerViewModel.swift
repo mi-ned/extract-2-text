@@ -13,7 +13,13 @@ import AVFoundation
 class LiveScannerViewModel: ObservableObject {
     
     @Published var outputBoxMessage: String = String(localized:  "card_ui.output_box.scan_code")
-    @Published var zoomFactor: CGFloat = 1.0
+    @Published var zoomFactor: CGFloat = 1.0 {
+        didSet {
+            if abs(oldValue - zoomFactor) > 0.05 {
+                CameraManager.shared.setZoom(zoomFactor)
+            }
+        }
+    }
     @Published var timeRemaining: Double = 0.0
     
     private var expirationDate: Date? = nil
@@ -23,9 +29,7 @@ class LiveScannerViewModel: ObservableObject {
     private var resetTask: Task<Void, Never>? = nil
     private var resumeScanningTask: Task<Void, Never>? = nil
     
-    @Published var isFlashlightBusying: Bool = false
     @Published var isFlashlightOn: Bool = false
-    @Published var isScanning: Bool = true
     
     private let validator = ValidationService()
     private var flashlightCancellable: AnyCancellable?
@@ -34,7 +38,12 @@ class LiveScannerViewModel: ObservableObject {
     init() {
         FlashlightManager.shared.$isOn
             .receive(on: DispatchQueue.main)
-            .assign(to: &$isFlashlightOn)
+            .sink { [weak self] newValue in
+                if self?.isFlashlightOn != newValue {
+                    self?.isFlashlightOn = newValue
+                }
+            }
+            .store(in: &cancellables)
         
         setupSceneObservers()
     }
@@ -105,6 +114,7 @@ class LiveScannerViewModel: ObservableObject {
     }
     
     func toggleFlashlight() {
+<<<<<<< HEAD
         guard !isFlashlightBusying else { return }
 
         isFlashlightBusying = true
@@ -117,6 +127,9 @@ class LiveScannerViewModel: ObservableObject {
 
             isFlashlightBusying = false
         }
+=======
+        FlashlightManager.shared.toggleTorch()
+>>>>>>> parent of dbf7370 (Saturday 23rd May 2026; 4:55pm)
     }
         
     func processScan(scannedText: String) {

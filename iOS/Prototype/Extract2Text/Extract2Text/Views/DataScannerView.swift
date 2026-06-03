@@ -12,8 +12,8 @@ import Vision
 
 struct DataScannerView: UIViewRepresentable {
     @Binding var zoomFactor: CGFloat
-    @Binding var isScanning: Bool
     var onTextFound: (String) -> Void
+<<<<<<< HEAD
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -37,7 +37,37 @@ struct DataScannerView: UIViewRepresentable {
             if abs(zoomFactor - clampedZoom) > 0.001 {
                 zoomFactor = clampedZoom
             }
+=======
+    
+    func makeUIViewController(context: Context) -> DataScannerViewController {
+        let scanner = DataScannerViewController(
+            recognizedDataTypes: [.text()],
+            qualityLevel: .accurate,
+            recognizesMultipleItems: false,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
+            isHighlightingEnabled: true
+        )
+        scanner.delegate = context.coordinator
+        return scanner
+    }
+    
+    func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
+        
+        if uiViewController.zoomFactor != zoomFactor {
+            uiViewController.zoomFactor = zoomFactor
+>>>>>>> parent of dbf7370 (Saturday 23rd May 2026; 4:55pm)
         }
+        
+        if !uiViewController.isScanning && !context.coordinator.isStarting {
+            context.coordinator.isStarting = true
+            
+            try? uiViewController.startScanning()
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
     }
 
     static func dismantleUIView(_ uiView: PreviewView, coordinator: Coordinator) {
@@ -136,6 +166,7 @@ struct RecognizedTextItem: Equatable {
 extension DataScannerView {
     final class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         var parent: DataScannerView
+<<<<<<< HEAD
         weak var previewView: PreviewView?
 
         private let session = AVCaptureSession()
@@ -333,5 +364,16 @@ extension DataScannerView {
 private extension CGRect {
     var area: CGFloat {
         width * height
+=======
+        var isStarting = false
+        
+        init(_ parent: DataScannerView) { self.parent = parent }
+        
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            if case .text(let text) = item {
+                parent.onTextFound(text.transcript)
+            }
+        }
+>>>>>>> parent of dbf7370 (Saturday 23rd May 2026; 4:55pm)
     }
 }
