@@ -21,17 +21,20 @@ struct ContentView: View {
         ZStack {
             
             //Camera layer
-            if cameraManager.status == .error {
-                CameraErrorAlertView(cameraManager: cameraManager)
-                    .transition(.opacity)
-            } else if cameraManager.status == .userDismissedError {
-                CameraErrorView()
-                    .transition(.opacity)
-            } else {
-                CameraPreviewView(session: cameraManager.session)
-                    .onAppear { cameraManager.start() }
-                    .onDisappear() { cameraManager.stop() }
-                    .edgesIgnoringSafeArea(.all)
+            switch cameraManager.status {
+                case .error, .unauthorized:
+                    CameraErrorAlertView(cameraManager: cameraManager)
+                        .transition(.opacity)
+                    
+                case .userDismissedError:
+                    CameraErrorView()
+                        .transition(.opacity)
+                    
+                case .running, .idle:
+                    CameraPreviewView(session: cameraManager.session)
+                        .onAppear() { cameraManager.start() }
+                        .onDisappear() { cameraManager.stop() }
+                        .edgesIgnoringSafeArea(.all)
             }
                         
             /*if showOverlay {

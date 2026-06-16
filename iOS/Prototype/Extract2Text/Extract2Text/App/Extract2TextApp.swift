@@ -11,7 +11,6 @@ import SwiftUI
 struct Extract2TextApp: App {
     var body: some Scene {
         WindowGroup {
-            // Launch the main scanner view (contains start camera control).
             ContentView()
         }
     }

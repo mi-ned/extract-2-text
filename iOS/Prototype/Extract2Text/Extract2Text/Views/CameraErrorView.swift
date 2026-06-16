@@ -19,8 +19,5 @@ struct CameraErrorView: View {
                 .multilineTextAlignment(.center)
                 .padding()
         }
-        
     }
-    
-    
 }
