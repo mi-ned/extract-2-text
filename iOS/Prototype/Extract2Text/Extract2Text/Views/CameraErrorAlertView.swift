@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CameraErrorAlertView: View {
-    var cameraManager: CameraManager
+    var onDismiss: () -> Void
     
     var body: some View {
         ZStack {
@@ -17,12 +17,12 @@ struct CameraErrorAlertView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0){
-                Text("main.camera.not_supported")
+                Text("main.camera.not_supported", comment: "Error header")
                     .font(.headline)
                     .padding(.top,20)
                     .padding(.bottom,20)
                     
-                Text("main.camera.not_supported_message")
+                Text("main.camera.not_supported_message", comment: "Error message")
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
@@ -45,7 +45,7 @@ struct CameraErrorAlertView: View {
                             .frame(height: 48)
                         
                         Button("alert.button.ok"){
-                            cameraManager.status = .userDismissedError
+                            onDismiss()
                         }
                         .foregroundColor(.blue)
                         .font(.system(.body, weight: .semibold))
@@ -53,7 +53,8 @@ struct CameraErrorAlertView: View {
                         .padding(.vertical, 15)
                     }
                 }
-                .frame(width: 270)
+                .frame(maxWidth: 300)
+                .minimumScaleFactor(0.5)
                 .background(.ultraThinMaterial)
                 .cornerRadius(14)
             }

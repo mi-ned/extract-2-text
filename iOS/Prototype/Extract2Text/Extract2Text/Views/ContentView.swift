@@ -11,7 +11,7 @@ import Combine
 
 struct ContentView: View {
     
-    @State private var cameraManager = CameraManager()
+    @State private var viewModel = ContentViewModel()
     
     //@StateObject private var viewModel = LiveScannerViewModel()
     //private let showOverlay = false
@@ -21,19 +21,21 @@ struct ContentView: View {
         ZStack {
             
             //Camera layer
-            switch cameraManager.status {
+            switch viewModel.cameraState {
                 case .error, .unauthorized:
-                    CameraErrorAlertView(cameraManager: cameraManager)
-                        .transition(.opacity)
+                    CameraErrorAlertView(onDismiss: {
+                        viewModel.dismissError()
+                    })
+                    .transition(.opacity)
                     
-                case .userDismissedError:
+                case .restricted:
                     CameraErrorView()
                         .transition(.opacity)
-                    
-                case .running, .idle:
-                    CameraPreviewView(session: cameraManager.session)
-                        .onAppear() { cameraManager.start() }
-                        .onDisappear() { cameraManager.stop() }
+                
+                case .active, .idle:
+                    CameraPreviewView(session: viewModel.session)
+                        .onAppear { viewModel.startCamera() }
+                        .onDisappear { viewModel.stopCamera() }
                         .edgesIgnoringSafeArea(.all)
             }
                         
@@ -59,6 +61,6 @@ struct ContentView: View {
                 }
             }*/
         }
-        .animation(.easeInOut, value: cameraManager.status)
+        .animation(.easeInOut, value: viewModel.cameraState)
     }
 }

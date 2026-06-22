@@ -8,18 +8,20 @@
 import AVFoundation
 import SwiftUI
 
-enum CameraStatus {
-    case idle, running, unauthorized, error, userDismissedError
+enum CameraState {
+    case idle, active, unauthorized, error, restricted
 }
 
 @Observable
 class CameraManager {
     
-    private let simulateError = false
+    private let simulateError: Bool = false
     
-    var status: CameraStatus = .idle
-    let session = AVCaptureSession()
-    private let sessionQueue = DispatchQueue(label: "camera.session.queue")
+    var state: CameraState = .idle
+    let session: AVCaptureSession = AVCaptureSession()
+    private let sessionQueue: DispatchQueue = DispatchQueue(label: "camera.session.queue")
+    
+    //Refactor further down...
     
     init() {
         print("CameraManager Initialized!")
@@ -32,14 +34,14 @@ class CameraManager {
         case .authorized:
             setupSession()
         case .notDetermined:
-            // Request permission explicitly
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                if granted {
-                    self?.setupSession()
-                } else {
-                    self?.updateStatusOnMainActor(.unauthorized)
+                Task {
+                    let granted = await AVCaptureDevice.requestAccess(for: .video)
+                    if granted {
+                        setupSession()
+                    } else {
+                        state = .unauthorized
+                    }
                 }
-            }
         case .denied, .restricted:
             updateStatusOnMainActor(.unauthorized)
         @unknown default:
@@ -53,7 +55,7 @@ class CameraManager {
             
             if self.simulateError {
                 self.updateStatusOnMainActor(.error)
-                print("Manual test trigger: Status set to .error")
+                print("Manual test trigger: State set to .error")
                 return
             }
             
@@ -93,7 +95,7 @@ class CameraManager {
             camera.unlockForConfiguration()
             
             self.session.commitConfiguration()
-            self.updateStatusOnMainActor(.running)
+            self.updateStatusOnMainActor(.active)
         } catch {
             self.session.commitConfiguration()
             self.updateStatusOnMainActor(.error)
@@ -118,16 +120,32 @@ class CameraManager {
             print("Interruption ended. Restoring video engine feed.")
             self?.start()
         }
+        
+        NotificationCenter.default.addObserver(
+            forName: .AVCaptureSessionRuntimeError,
+            object: session,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            
+            if let error = notification.userInfo?[AVCaptureSessionErrorKey] as? AVError {
+                if error.code == .mediaServicesWereReset {
+                    self.start()
+                } else {
+                    self.state = .error
+                }
+            }
+        }
     }
     
-    private func updateStatusOnMainActor(_ newStatus: CameraStatus) {
+    private func updateStatusOnMainActor(_ newStatus: CameraState) {
         DispatchQueue.main.async { [weak self] in
-            self?.status = newStatus
+            self?.state = newStatus
         }
     }
     
     func start() {
-        let canStart = status == .running || status == .idle
+        let canStart = state == .active || state == .idle
         guard canStart else { return }
 
         sessionQueue.async { [weak self] in
@@ -148,14 +166,14 @@ class CameraManager {
     
     func dismissCurrentError(){
         DispatchQueue.main.async { [weak self] in
-            self?.status = .userDismissedError
+            self?.state = .restricted
         }
     }
     
     func triggerTestError() {
         Task { @MainActor in
-            self.status = .error
+            self.state = .error
         }
-        print("Test: Status set to .error")
+        print("Test: CamerState set to .error")
     }
 }

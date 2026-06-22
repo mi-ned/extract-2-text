@@ -12,15 +12,23 @@ import UIKit
 struct CameraPreviewView: UIViewRepresentable {
     var session: AVCaptureSession
     
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: UIScreen.main.bounds)
+    class VideoPreviewView: UIView {
+        override class var layerClass: AnyClass {
+            return AVCaptureVideoPreviewLayer.self
+        }
+        
+        var previewLayer: AVCaptureVideoPreviewLayer {
+            return layer as! AVCaptureVideoPreviewLayer
+        }
+    }
+    
+    func makeUIView(context: Context) -> VideoPreviewView {
+        let view = VideoPreviewView()
         view.backgroundColor = .black
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = view.bounds
-        view.layer.addSublayer(previewLayer)
+        view.previewLayer.session = session
+        view.previewLayer.videoGravity = .resizeAspectFill
         return view
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ uiView: VideoPreviewView, context: Context) {}
 }
