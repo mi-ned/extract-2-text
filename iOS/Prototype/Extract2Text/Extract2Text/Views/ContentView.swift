@@ -11,15 +11,10 @@ import Combine
 
 struct ContentView: View {
     
-    @State private var viewModel = ContentViewModel()
-    
-    //@StateObject private var viewModel = LiveScannerViewModel()
-    //private let showOverlay = false
+    @Bindable var viewModel: ContentViewModel
     
     var body: some View {
-        
         ZStack {
-            
             //Camera layer
             switch viewModel.cameraState {
                 case .error, .unauthorized:
@@ -37,7 +32,7 @@ struct ContentView: View {
                         .onAppear { viewModel.startCamera() }
                         .onDisappear { viewModel.stopCamera() }
                         .edgesIgnoringSafeArea(.all)
-            }
+                }
                         
             /*if showOverlay {
                 //Flashlight button
@@ -58,9 +53,11 @@ struct ContentView: View {
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 34)
+                }*/
                 }
-            }*/
-        }
+                .task {
+                    await viewModel.prepareCamera()
+                }
         .animation(.easeInOut, value: viewModel.cameraState)
     }
 }

@@ -10,7 +10,6 @@ import SwiftUI
 struct CameraErrorView: View {
     
     var body: some View {
-        
         VStack {
             Text("main.camera.not_supported", comment: "Displayed when camera initialision fails")
                 .foregroundColor(Color("ForegroundColor"))

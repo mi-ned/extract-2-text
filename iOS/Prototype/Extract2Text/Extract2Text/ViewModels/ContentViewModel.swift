@@ -14,27 +14,35 @@ import AVFoundation
 class ContentViewModel {
     private let cameraManager: CameraManager
     
-    var cameraState: CameraState {
+    public var cameraState: CameraState {
         cameraManager.state
     }
     
-    var session: AVCaptureSession {
+    public var session: AVCaptureSession {
         cameraManager.session
     }
     
-    init(cameraManager: CameraManager = CameraManager()) {
+    public init() {
+        self.cameraManager = CameraManager()
+    }
+    
+    public init(cameraManager: CameraManager){
         self.cameraManager = cameraManager
     }
     
-    func startCamera() {
+    public func prepareCamera() async {
+        await cameraManager.configureCamera()
+    }
+    
+    public func startCamera() {
         cameraManager.start()
     }
     
-    func stopCamera() {
+    public func stopCamera() {
         cameraManager.stop()
     }
     
-    func dismissError() {
+    public func dismissError() {
         cameraManager.dismissCurrentError()
     }
     
