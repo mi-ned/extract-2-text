@@ -15,49 +15,62 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            //Camera layer
-            switch viewModel.cameraState {
-                case .error, .unauthorized:
-                    CameraErrorAlertView(onDismiss: {
-                        viewModel.dismissError()
-                    })
+            
+            //Camera
+            CameraPreviewView(session: viewModel.session)
+                .ignoresSafeArea()
+                .onAppear { viewModel.startCamera() }
+                .onDisappear { viewModel.stopCamera() }
+            
+            //loading state
+            if viewModel.cameraState == .idle{
+                //TODO: Add idle UI here
+            }
+            
+            //Blackout mask
+            if viewModel.cameraState != .unauthorized || viewModel.cameraState != .error {
+                Color.black.ignoresSafeArea()
+                CameraErrorAlertView(onDismiss: {
+                    viewModel.dismissError()
+                })
+                .transition(.opacity)
+            } else if viewModel.cameraState == .restricted {
+                Color.black.ignoresSafeArea()
+                CameraErrorView()
                     .transition(.opacity)
-                    
-                case .restricted:
-                    CameraErrorView()
-                        .transition(.opacity)
-                
-                case .active, .idle:
-                    CameraPreviewView(session: viewModel.session)
-                        .onAppear { viewModel.startCamera() }
-                        .onDisappear { viewModel.stopCamera() }
-                        .edgesIgnoringSafeArea(.all)
-                }
-                        
+            }
+            
+            //Overlay UI
+            if viewModel.cameraState == .active {
+                //TODO: Add overlay UI here
+            }
+            
             /*if showOverlay {
-                //Flashlight button
-                VStack {
-                    
-                    FlashlightToggleButton(viewModel: viewModel)
-                        .padding(.top, 64)
-                    
-                    Spacer()
-                    
-                    // Card UI
-                    ScannerOverlayCard(
-                        message: viewModel.outputBoxMessage,
-                        timeRemaining: viewModel.timeRemaining,
-                        totalDuration: AppConfig.timerDurationInSeconds,
-                        statusMessage: viewModel.statusMessage,
-                        appInfo: String(localized: LocalizedStringResource("card_ui.footer.version_label \(AppConfig.appName) \(AppConfig.appVersion)"))
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 34)
-                }*/
-                }
-                .task {
-                    await viewModel.prepareCamera()
-                }
+             //Flashlight button
+             VStack {
+             
+             FlashlightToggleButton(viewModel: viewModel)
+             .padding(.top, 64)
+             
+             Spacer()
+             
+             // Card UI
+             ScannerOverlayCard(
+             message: viewModel.outputBoxMessage,
+             timeRemaining: viewModel.timeRemaining,
+             totalDuration: AppConfig.timerDurationInSeconds,
+             statusMessage: viewModel.statusMessage,
+             appInfo: String(localized: LocalizedStringResource("card_ui.footer.version_label \(AppConfig.appName) \(AppConfig.appVersion)"))
+             )
+             .padding(.horizontal, 20)
+             .padding(.bottom, 34)
+             }
+             }
+             */
+        }
+        .task {
+            await viewModel.prepareCamera()
+        }
         .animation(.easeInOut, value: viewModel.cameraState)
     }
 }

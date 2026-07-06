@@ -20,12 +20,10 @@ class CameraManager {
     
     private let simulateError: Bool = false
     public private(set) var state: CameraState = .idle
-    let session: AVCaptureSession = AVCaptureSession()
     
-    private var tokens: [Any] = []
+    nonisolated let session: AVCaptureSession = AVCaptureSession()
+    nonisolated private var tokens: [any NSObjectProtocol] = []
     private var setupResult: SessionSetupResult = .success
-    
-    //Refactor further down...
     
     public init() {
         print("CameraManager Initialized!")
@@ -33,7 +31,10 @@ class CameraManager {
     }
     
     nonisolated deinit {
-        
+        let center = NotificationCenter.default
+        for token in tokens {
+            center.removeObserver(token)
+        }
     }
     
     public func configureCamera() async {
@@ -148,7 +149,9 @@ class CameraManager {
     
     private func setupObservers() {
         
-        let interruptedObserver = NotificationCenter.default.addObserver(
+        let center = NotificationCenter.default
+        
+        let interruptedObserver = center.addObserver(
             forName: .AVCaptureSessionWasInterrupted,
             object: session,
             queue: .main
@@ -157,7 +160,7 @@ class CameraManager {
         }
         tokens.append(interruptedObserver)
 
-        let endedObserver = NotificationCenter.default.addObserver(
+        let endedObserver = center.addObserver(
             forName: .AVCaptureSessionInterruptionEnded,
             object: session,
             queue: .main
@@ -170,7 +173,7 @@ class CameraManager {
         }
         tokens.append(endedObserver)
         
-        let errorObserver = NotificationCenter.default.addObserver(
+        let errorObserver = center.addObserver(
             forName: .AVCaptureSessionRuntimeError,
             object: session,
             queue: .main

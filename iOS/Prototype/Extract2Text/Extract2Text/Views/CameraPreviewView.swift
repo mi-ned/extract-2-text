@@ -20,6 +20,11 @@ struct CameraPreviewView: UIViewRepresentable {
         var previewLayer: AVCaptureVideoPreviewLayer {
             return layer as! AVCaptureVideoPreviewLayer
         }
+        
+        override func layoutSubviews(){
+            super.layoutSubviews()
+            previewLayer.frame = bounds
+        }
     }
     
     func makeUIView(context: Context) -> VideoPreviewView {

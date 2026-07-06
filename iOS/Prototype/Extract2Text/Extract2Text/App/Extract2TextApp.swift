@@ -9,10 +9,15 @@ import SwiftUI
 
 @main
 struct Extract2TextApp: App {
-    @State private var viewModel = ContentViewModel()
+    @State private var contentViewModel = ContentViewModel()
+    
+    init() {
+        _contentViewModel = State(initialValue: ContentViewModel())
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView(viewModel: viewModel)
+            ContentView(viewModel: contentViewModel)
         }
     }
 }
