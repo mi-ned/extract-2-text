@@ -36,7 +36,7 @@ struct CameraErrorAlertView: View {
                                 UIApplication.shared.open(url)
                             }
                         }
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .font(.system(.body, weight: .regular))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
@@ -47,7 +47,7 @@ struct CameraErrorAlertView: View {
                         Button("alert.button.ok"){
                             onDismiss()
                         }
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .font(.system(.body, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)

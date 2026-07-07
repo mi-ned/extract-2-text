@@ -30,8 +30,11 @@ struct CameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> VideoPreviewView {
         let view = VideoPreviewView()
         view.backgroundColor = .black
+        //#if targetEnvironment(simulator)
+        //#else
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
+        //#endif
         return view
     }
 

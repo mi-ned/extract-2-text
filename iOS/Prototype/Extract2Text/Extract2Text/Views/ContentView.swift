@@ -22,27 +22,21 @@ struct ContentView: View {
                 .onAppear { viewModel.startCamera() }
                 .onDisappear { viewModel.stopCamera() }
             
-            //loading state
-            if viewModel.cameraState == .idle{
-                //TODO: Add idle UI here
-            }
-            
-            //Blackout mask
-            if viewModel.cameraState != .unauthorized || viewModel.cameraState != .error {
-                Color.black.ignoresSafeArea()
-                CameraErrorAlertView(onDismiss: {
-                    viewModel.dismissError()
-                })
-                .transition(.opacity)
-            } else if viewModel.cameraState == .restricted {
-                Color.black.ignoresSafeArea()
-                CameraErrorView()
+            switch viewModel.cameraState {
+                case .idle:
+                    //TODO: Add idle UI here
+                case .active:
+                    //TODO: Add overlay UI here
+                case .unauthorized, .error:
+                    Color.black.ignoresSafeArea()
+                    CameraErrorAlertView(onDismiss: {
+                        viewModel.dismissError()
+                    })
                     .transition(.opacity)
-            }
-            
-            //Overlay UI
-            if viewModel.cameraState == .active {
-                //TODO: Add overlay UI here
+                case .restricted:
+                    Color.black.ignoresSafeArea()
+                    CameraErrorView()
+                        .transition(.opacity)
             }
             
             /*if showOverlay {

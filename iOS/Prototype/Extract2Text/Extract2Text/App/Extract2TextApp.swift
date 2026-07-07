@@ -10,14 +10,24 @@ import SwiftUI
 @main
 struct Extract2TextApp: App {
     @State private var contentViewModel = ContentViewModel()
+    @State private var showDebugSwitchboard = false
     
-    init() {
+    /*init() {
         _contentViewModel = State(initialValue: ContentViewModel())
-    }
+    }*/
 
     var body: some Scene {
         WindowGroup {
             ContentView(viewModel: contentViewModel)
-        }
+            #if DEBUG
+                .keyboardShortcut("D", modifiers: .command)
+                    .onShake{
+                        showDebugSwitchboard = true
+                    }
+                    .sheet(isPresented: $showDebugSwitchboard) {
+                        DeveloperSwitchboardView(viewModel: viewModel)
+                    }
+                    #endif
+                }
     }
 }

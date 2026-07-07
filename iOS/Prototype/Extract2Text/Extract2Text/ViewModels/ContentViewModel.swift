@@ -11,6 +11,7 @@ import AVFoundation
 @MainActor
 @Observable
 class ContentViewModel {
+    
     private let cameraManager: CameraManager
     
     public var cameraState: CameraState {
@@ -47,3 +48,11 @@ class ContentViewModel {
     
     
 }
+
+#if DEBUG
+extension ContentViewModel {
+    func simulateHardwareFailure(){
+        cameraManager.triggerTestError()
+    }
+}
+#endif
