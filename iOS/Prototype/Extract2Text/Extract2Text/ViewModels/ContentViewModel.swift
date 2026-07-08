@@ -15,11 +15,11 @@ class ContentViewModel {
     private let cameraManager: CameraManager
     
     public var cameraState: CameraState {
-        cameraManager.state
+        cameraManager.cameraState
     }
     
-    public var session: AVCaptureSession {
-        cameraManager.session
+    public var captureSession: AVCaptureSession {
+        cameraManager.captureSession
     }
     
     public init() {
@@ -30,23 +30,21 @@ class ContentViewModel {
         self.cameraManager = cameraManager
     }
     
-    public func prepareCamera() async {
+    public func configureCamera() async {
         await cameraManager.configureCamera()
     }
     
     public func startCamera() {
-        cameraManager.start()
+        cameraManager.startCamera()
     }
     
     public func stopCamera() {
-        cameraManager.stop()
+        cameraManager.stopCamera()
     }
     
-    public func dismissError() {
+    public func dismissCurrentError() {
         cameraManager.dismissCurrentError()
     }
-    
-    
 }
 
 #if DEBUG

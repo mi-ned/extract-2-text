@@ -10,7 +10,7 @@ import Foundation
 public enum CameraState: Sendable {
     case idle
     case active
-    case unauthorized
+    case unauthorised
     case error
     case restricted
 }

@@ -17,7 +17,7 @@ struct ContentView: View {
         ZStack {
             
             //Camera
-            CameraPreviewView(session: viewModel.session)
+            CameraPreviewView(session: viewModel.captureSession)
                 .ignoresSafeArea()
                 .onAppear { viewModel.startCamera() }
                 .onDisappear { viewModel.stopCamera() }
@@ -27,10 +27,10 @@ struct ContentView: View {
                     //TODO: Add idle UI here
                 case .active:
                     //TODO: Add overlay UI here
-                case .unauthorized, .error:
+                case .unauthorised, .error:
                     Color.black.ignoresSafeArea()
                     CameraErrorAlertView(onDismiss: {
-                        viewModel.dismissError()
+                        viewModel.dismissCurrentError()
                     })
                     .transition(.opacity)
                 case .restricted:
@@ -63,7 +63,7 @@ struct ContentView: View {
              */
         }
         .task {
-            await viewModel.prepareCamera()
+            await viewModel.configureCamera()
         }
         .animation(.easeInOut, value: viewModel.cameraState)
     }

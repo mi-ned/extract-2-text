@@ -8,18 +8,18 @@
 import AVFoundation
 
 public final class CameraBufferProxy: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, Sendable {
-    let onFrame: @Sendable (CMSampleBuffer) -> Void
+    let action: @Sendable (CMSampleBuffer) -> Void
     
-    init(onFrame: @escaping @Sendable (CMSampleBuffer) -> Void) {
-        self.onFrame = onFrame
+    init(action: @escaping @Sendable (CMSampleBuffer) -> Void) {
+        self.action = action
         super.init()
     }
     
-    public nonisolated func captureOutput(
+    public nonisolated func captureRearCameraOutput(
         _ output: AVCaptureOutput,
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
-        onFrame(sampleBuffer)
+        action(sampleBuffer)
     }
 }

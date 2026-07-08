@@ -21,11 +21,11 @@ struct Extract2TextApp: App {
             ContentView(viewModel: contentViewModel)
             #if DEBUG
                 .keyboardShortcut("D", modifiers: .command)
-                    .onShake{
-                        showDebugSwitchboard = true
-                    }
+                .onShake {
+                    showDebugSwitchboard = true
+                }
                     .sheet(isPresented: $showDebugSwitchboard) {
-                        DeveloperSwitchboardView(viewModel: viewModel)
+                        DeveloperSwitchboardView(viewModel: contentViewModel)
                     }
                     #endif
                 }

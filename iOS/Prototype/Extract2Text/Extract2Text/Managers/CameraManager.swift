@@ -14,8 +14,8 @@ class CameraManager: NSObject {
     
     private enum SessionSetupResult {
         case success
-        case notAuthorized
-        case configurationFailed
+        case notAuthorised
+        case setupError
     }
     
     public private(set) var cameraState: CameraState = .idle
@@ -32,7 +32,7 @@ class CameraManager: NSObject {
     public override init() {
         print("CameraManager Initialized!")
         super.init()
-        setupObservers()
+        startSystemNotificationObservers()
     }
     
     public func configureCamera() async {
@@ -40,178 +40,200 @@ class CameraManager: NSObject {
         
         switch AVCaptureDevice.authorizationStatus(for: .video) {
             case .authorized:
-                await setupCameraSession()
+                await setupRearCameraSession()
             case .notDetermined:
-                let isAccessGranted: Bool = await AVCaptureDevice.requestAccess(for: .video)
-                if isAccessGranted {
-                    await setupCameraSession()
+                let isGranted: Bool = await AVCaptureDevice.requestAccess(for: .video)
+                if isGranted {
+                    await setupRearCameraSession()
                 } else {
-                    self.sessionSetupResult = .notAuthorized
-                    self.cameraState = .unauthorized
+                    self.sessionSetupResult = .notAuthorised
+                    self.cameraState = .unauthorised
                 }
             case .denied, .restricted:
-                self.sessionSetupResult = .notAuthorized
-                self.cameraState = .unauthorized
+                self.sessionSetupResult = .notAuthorised
+                self.cameraState = .unauthorised
             @unknown default:
                 self.cameraState = .error
         }
     }
     
-    private func setupCameraSession() async {
+    private func setupRearCameraSession() async {
         
-        guard let rearCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        //Guard check
+        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             self.cameraState = .error
             return
         }
         
-        let captureSession = self.captureSession
-        let videoBufferQueue = self.videoDataQueue
-        
-        let frameOutputDelegate = CameraBufferProxy { [weak self] sampleBuffer in
+        //Closure allocation
+        let delegate = CameraBufferProxy { [weak self] sampleBuffer in
             self?.handleFrameReceived(sampleBuffer)
         }
         
-        let isConfigurationSuccessful = await Task.detached(priority: .userInitiated) {
+        //Offloading configuration to a background thread
+        let isConfigured: Bool = await Task.detached(priority: .userInitiated) { [captureSession, videoDataQueue] in
             return CameraManager.performBackgroundCameraSetup(
-                cameraSession: captureSession,
-                rearCamera: rearCamera,
-                outputBufferDelegate: frameOutputDelegate,
-                outputDispatchQueue: videoBufferQueue
+                session: captureSession,
+                camera: camera,
+                delegate: delegate,
+                queue: videoDataQueue
             )
         }.value
         
-        if isConfigurationSuccessful {
+        //Updating MainActor state based on configuration result
+        if isConfigured {
             self.sessionSetupResult = .success
             self.cameraState = .active
         } else {
-            self.sessionSetupResult = .configurationFailed
+            self.sessionSetupResult = .setupError
             self.cameraState = .error
         }
     }
     
-    nonisolated private static func performBackgroundCameraSetup(
-        cameraSession: AVCaptureSession,
-        rearCamera: AVCaptureDevice,
-        outputBufferDelegate: AVCaptureVideoDataOutputSampleBufferDelegate,
-        outputDispatchQueue: DispatchQueue
-    ) -> Bool {
+    nonisolated private static func performBackgroundCameraSetup(session: AVCaptureSession, camera: AVCaptureDevice, delegate: AVCaptureVideoDataOutputSampleBufferDelegate, queue: DispatchQueue) -> Bool {
+        session.beginConfiguration()
+        session.sessionPreset = .high
+        
         do{
-            cameraSession.beginConfiguration()
-            cameraSession.sessionPreset = .high
+            try configureRearCameraInput(for: session, device: camera)
             
-            let rearCameraInput = try AVCaptureDeviceInput(device: rearCamera)
-            if cameraSession.canAddInput(rearCameraInput) {
-                cameraSession.addInput(rearCameraInput)
-            } else {
-                cameraSession.commitConfiguration()
-                return false
-            }
+            try configureVideoDataOutput(for: session, delegate: delegate, queue: queue)
             
-            let videoOutput = AVCaptureVideoDataOutput()
-            videoOutput.alwaysDiscardsLateVideoFrames = true
-            videoOutput.setSampleBufferDelegate(outputBufferDelegate, queue: outputDispatchQueue)
-            if cameraSession.canAddOutput(videoOutput){
-                cameraSession.addOutput(videoOutput)
-            } else {
-                cameraSession.commitConfiguration()
-                return false
-            }
+            try configureRearCameraSettings(for: camera)
             
-            try rearCamera.lockForConfiguration()
-            if rearCamera.isFocusModeSupported(.continuousAutoFocus){
-                rearCamera.focusMode = .continuousAutoFocus
-            }
-            let targetFrameRateDuration = CMTime(value: 1, timescale: 30)
-            rearCamera.activeVideoMinFrameDuration = targetFrameRateDuration
-            rearCamera.activeVideoMaxFrameDuration = targetFrameRateDuration
-            
-            rearCamera.unlockForConfiguration()
-            cameraSession.commitConfiguration()
+            session.commitConfiguration()
             return true
         } catch {
-            cameraSession.commitConfiguration()
+            session.commitConfiguration()
             print("Camera Setup Error: \(error)")
             return false
         }
     }
     
-    public func start() {
+    nonisolated private static func configureRearCameraInput(for session: AVCaptureSession, device: AVCaptureDevice) throws {
+        let input = try AVCaptureDeviceInput(device: device)
+        guard session.canAddInput(input) else {
+            throw NSError(domain: "CameraManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot add camera input to session"])
+        }
+        session.addInput(input)
+    }
+    
+    nonisolated private static func configureVideoDataOutput(for session: AVCaptureSession, delegate: AVCaptureVideoDataOutputSampleBufferDelegate, queue: DispatchQueue) throws {
+        
+        let output = AVCaptureVideoDataOutput()
+        output.alwaysDiscardsLateVideoFrames = true
+        output.setSampleBufferDelegate(delegate, queue: queue)
+        
+        guard session.canAddOutput(output) else {
+            throw NSError(domain: "CameraManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot add video output to session"])
+        }
+        session.addOutput(output)
+    }
+    
+    nonisolated private static func configureRearCameraSettings(for camera: AVCaptureDevice) throws {
+        try camera.lockForConfiguration()
+        
+        if camera.isFocusModeSupported(.continuousAutoFocus){
+            camera.focusMode = .continuousAutoFocus
+        }
+        
+        let duration = CMTime(value: 1, timescale: 30)
+        camera.activeVideoMinFrameDuration = duration
+        camera.activeVideoMaxFrameDuration = duration
+        
+        camera.unlockForConfiguration()
+    }
+    
+    public func startCamera() {
         guard sessionSetupResult == .success else { return }
         let canStart = cameraState == .active || cameraState == .idle || cameraState == .restricted
         guard canStart else { return }
         
-        let captureSession = self.captureSession
+        let session = self.captureSession
         Task.detached(priority: .userInitiated) {
-            if !captureSession.isRunning {
-                captureSession.startRunning()
+            if !session.isRunning {
+                session.startRunning()
             }
         }
     }
     
-    public func stop() {
-        let captureSession = self.captureSession
+    public func stopCamera() {
+        let session = self.captureSession
         Task.detached(priority: .userInitiated) {
-            if captureSession.isRunning {
-                captureSession.stopRunning()
+            if session.isRunning {
+                session.stopRunning()
             }
         }
     }
     
-    func dismissCurrentError(){
+    public func dismissCurrentError(){
         self.cameraState = .restricted
     }
     
-    func triggerTestError() {
+    public func triggerTestError() {
         self.cameraState = .error
         print("Test: CamerState set to .error")
     }
     
-    private func setupObservers() {
+    private func startSystemNotificationObservers() {
         
-        let center = NotificationCenter.default
-        let sessionRef = self.captureSession
+        let centre = NotificationCenter.default
+        let session = self.captureSession
         
         cameraObserverTask = Task { [weak self] in
             await withTaskGroup(of: Void.self) { group in
                 
                 group.addTask {
-                    let sequence = center.notifications(named: .AVCaptureSessionWasInterrupted, object: sessionRef)
-                    for await _ in sequence {
-                        guard self != nil else { return }
-                        //self?.state = .restricted
-                        print("Camera was interrupted by the system.")
-                    }
+                    await self?.observeSessionWasInterrupted(in: centre, for: session)
                 }
                 
                 group.addTask {
-                    let sequence = center.notifications(named: .AVCaptureSessionInterruptionEnded, object: sessionRef)
-                    for await _ in sequence {
-                        print("Interuption ended. Restoring video engine feed.")
-                        await self?.start()
-                    }
+                    await self?.observeSessionInterruptionEnded(in: centre, for: session)
                 }
                 
                 group.addTask{
-                    let sequence = center.notifications(named: .AVCaptureSessionRuntimeError, object: sessionRef)
-                    for await notification in sequence {
-                        if let error = notification.userInfo?[AVCaptureSessionErrorKey] as? AVError {
-                            if error.code == .mediaServicesWereReset {
-                                await self?.start()
-                            } else {
-                                await self?.updateStateToError()
-                            }
-                        }
-                    }
+                    await self?.observeSessionRuntimeError(in: centre, for: session)
                 }
             }
         }
     }
     
-    private func updateStateToError(){
+    private func observeSessionWasInterrupted(in centre: NotificationCenter, for session: AVCaptureSession) async {
+        
+        let sequence = centre.notifications(named: .AVCaptureSessionWasInterrupted, object: session)
+        for await _ in sequence {
+            //guard self != nil else { return }
+            //self?.state = .restricted
+            print("Camera was interrupted by the system.")
+        }
+    }
+    
+    private func observeSessionInterruptionEnded(in centre: NotificationCenter, for session: AVCaptureSession) async {
+        let sequence = centre.notifications(named: .AVCaptureSessionInterruptionEnded, object: session)
+        for await _ in sequence {
+            print("Interuption ended. Restoring video engine feed.")
+            self.startCamera()
+        }
+    }
+    
+    private func observeSessionRuntimeError(in centre: NotificationCenter, for session: AVCaptureSession) async {
+            let sequence = centre.notifications(named: .AVCaptureSessionRuntimeError, object: session)
+            for await notification in sequence {
+            guard let error = notification.userInfo?[AVCaptureSessionErrorKey] as? AVError else { continue }
+            if error.code == .mediaServicesWereReset {
+                print("Media services reset. Restarting camera stream...")
+                self.startCamera()
+            } else {
+                self.transitionToErrorState()
+            }
+        }
+    }
+    
+    private func transitionToErrorState(){
         self.cameraState = .error
     }
     
-    public func cancelObservers(){
+    public func stopSystemNotificationObservers(){
         cameraObserverTask?.cancel()
         cameraObserverTask = nil
     }
