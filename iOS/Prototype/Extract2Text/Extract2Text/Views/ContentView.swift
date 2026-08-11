@@ -25,8 +25,10 @@ struct ContentView: View {
             switch viewModel.cameraState {
                 case .idle:
                     //TODO: Add idle UI here
+                    EmptyView()
                 case .active:
                     //TODO: Add overlay UI here
+                    EmptyView()
                 case .unauthorised, .error:
                     Color.black.ignoresSafeArea()
                     CameraErrorAlertView(onDismiss: {

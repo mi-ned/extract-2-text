@@ -15,7 +15,7 @@ public final class CameraBufferProxy: NSObject, AVCaptureVideoDataOutputSampleBu
         super.init()
     }
     
-    public nonisolated func captureRearCameraOutput(
+    public nonisolated func captureOutput(
         _ output: AVCaptureOutput,
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
